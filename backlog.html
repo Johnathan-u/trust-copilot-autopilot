@@ -442,12 +442,16 @@ function resetAll(){if(confirm("Reset all checkboxes?")){checked={};saveState();
 // ══════════════════════════════════════════
 // ── DIAGRAMS ──
 // ══════════════════════════════════════════
-function renderDiagrams(){renderStateMachine();renderArchitecture();renderDepGraph()}
+function renderDiagrams(){
+  renderStateMachine();renderArchitecture();
+  const dg=document.getElementById("diagramDeps");dg.innerHTML="";
+  renderDepGraph();
+}
 
 function svgEl(tag,attrs){const e=document.createElementNS("http://www.w3.org/2000/svg",tag);for(const[k,v]of Object.entries(attrs||{}))e.setAttribute(k,v);return e}
 
 function renderStateMachine(){
-  const c=document.getElementById("diagramStateMachine");if(c.querySelector("svg"))return;
+  const c=document.getElementById("diagramStateMachine");if(c.childElementCount)return;
   const W=900,H=320;const svg=svgEl("svg",{width:W,height:H,viewBox:`0 0 ${W} ${H}`});
   const states=[
     {label:"raw_signal",x:60,y:80},{label:"candidate_account",x:200,y:80},{label:"qualified_account",x:370,y:80},
@@ -485,7 +489,7 @@ function renderStateMachine(){
 }
 
 function renderArchitecture(){
-  const c=document.getElementById("diagramArchitecture");if(c.querySelector("svg"))return;
+  const c=document.getElementById("diagramArchitecture");if(c.childElementCount)return;
   const W=880,H=380;const svg=svgEl("svg",{width:W,height:H,viewBox:`0 0 ${W} ${H}`});
   const lanes=[
     {label:"DISCOVERY LANE",x:20,w:270,color:"#569cd6",items:["Source Registry","Fetcher + Playwright","Page Classifier","Signal Extractor","Account Fusion","Narrative Gen"]},
@@ -517,7 +521,7 @@ function renderArchitecture(){
 }
 
 function renderDepGraph(){
-  const c=document.getElementById("diagramDeps");if(c.querySelector("svg"))return;
+  const c=document.getElementById("diagramDeps");
   const W=900,H=200;const svg=svgEl("svg",{width:W,height:H,viewBox:`0 0 ${W} ${H}`});
   const nodes=[
     {id:"1",label:"Foundation",x:60,color:COLORS.blue},
@@ -780,8 +784,17 @@ function renderPerformance(){
   </div>`;
 }
 
+// ── Implemented tickets (auto-mark on load) ──
+const IMPLEMENTED = [
+  "ARC-001","PLAT-002","DATA-003","SIE-001","SIE-002",
+  "SIE-003","OPS-004","SIE-004","SIE-005","CFG-005"
+];
+
 // ── Init ──
-loadState();render();
+loadState();
+IMPLEMENTED.forEach(id => { checked[id] = true; });
+saveState();
+render();
 </script>
 </body>
 </html>

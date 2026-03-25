@@ -12,6 +12,7 @@ from db.models.messaging import (
 from db.models.intake import IntakeRoom, Upload, FulfillmentJob, ProofPack
 from db.models.billing import Offer, CheckoutSession, Subscription, WorkspaceProvision
 from db.models.ops import AuditEvent, OutboxEvent, SuppressionEntry
+from db.models.discovery import SourceEntry, CrawlJob, CrawlMetrics, ExtractedChunk
 from db.models.intelligence import (
     AccountFeatureSnapshot,
     AccountNarrative,
@@ -51,4 +52,8 @@ __all__ = [
     "BuyerHypothesis",
     "ContactDecision",
     "DecisionTrace",
+    "SourceEntry",
+    "CrawlJob",
+    "CrawlMetrics",
+    "ExtractedChunk",
 ]

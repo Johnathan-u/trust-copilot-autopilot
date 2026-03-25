@@ -1,10 +1,10 @@
-# Increment 1 — Closed-loop foundation
+# Increment 1 — Foundation & data model
 
-**Goal:** Stand up the minimal autonomous runtime and state model.
+**Goal:** Stand up the minimal autonomous runtime, state model, sales-intelligence schema, and typed contracts for every downstream worker.
 
-**Exit criteria:** You can run the happy path end-to-end on a tiny safe lane: signal → qualified account → allowed send → reply → intake room → fulfillment → offer → paid.
+**Exit criteria:** Core schema migrated; deal state machine enforced; signal contracts validated; decision traces replayable; event topics published/consumed in local dev; happy path from signal to paid passes end-to-end on a tiny safe lane.
 
-**Tickets:** 5
+**Tickets:** 10
 
 ---
 
@@ -96,6 +96,95 @@ Add Postgres tables for `accounts`, `contacts`, `signals`, `account_scores`, `bu
 
 ---
 
+## SIE-001 — Define sales-intelligence data model
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Estimate** | 3 pts |
+| **Depends on** | DATA-003 |
+| **Status** | `backlog` |
+
+### Why this exists
+
+The sales-intelligence layer needs its own schema for raw signals, normalized signals, account features, account narratives, buyer hypotheses, contact decisions, and decision traces — extending the core deal schema.
+
+### Scope
+
+Create the intelligence-specific schema for accounts, raw signals, normalized signals, account features, account narratives, buyer hypotheses, contact decisions, and decision traces. Use PostgreSQL for relational entities and pgvector only for semantic fields that need similarity lookup.
+
+### Acceptance criteria
+
+- [ ] Migrations exist
+- [ ] ERD is documented
+- [ ] Seed data loads
+- [ ] All entities have created_at/updated_at/source provenance/version fields
+
+### Cursor brief
+
+Add SQLAlchemy models and Alembic migrations for account intelligence entities. Keep raw ingestion tables append-only, keep derived tables versioned, and document join paths from raw_signal -> normalized_signal -> account_feature -> contact_decision.
+
+---
+
+## SIE-002 — Create normalized signal contract
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Estimate** | 3 pts |
+| **Depends on** | SIE-001 |
+| **Status** | `backlog` |
+
+### Why this exists
+
+Every signal emitted by crawlers and parsers needs a strict typed contract so downstream workers can trust the shape.
+
+### Scope
+
+Define a strict JSON/Pydantic contract for every signal. Include signal type, source URL, extracted text span, observed_at, confidence, and account-domain linkage.
+
+### Acceptance criteria
+
+- [ ] Shared contract package exists in libs/contracts
+- [ ] Validation fails on malformed events
+- [ ] Unit tests cover at least 10 signal types
+
+### Cursor brief
+
+Create Pydantic models for RawSignal and NormalizedSignal. Include enums for source_type, signal_type, and evidence_kind. Add validation tests and examples for trust page, hiring, certification, customer announcement, and negative signals.
+
+---
+
+## SIE-003 — Add account feature snapshot tables
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Estimate** | 3 pts |
+| **Depends on** | SIE-001, SIE-002 |
+| **Status** | `backlog` |
+
+### Why this exists
+
+Downstream scoring and decisioning need a stable feature state per account — ICP fit, trigger freshness, buyer confidence, competitor presence, deal value estimate, and outreach recommendation — without recomputing everything on every read.
+
+### Scope
+
+Create tables that store the current feature state for each account. Snapshots let later models read a stable state instead of recomputing everything on the fly.
+
+### Acceptance criteria
+
+- [ ] Snapshot tables exist
+- [ ] Write/upsert path exists
+- [ ] Feature version is stored
+- [ ] Read queries for latest snapshot are indexed
+
+### Cursor brief
+
+Implement account_feature_snapshots with versioning and upsert helpers. Use deterministic keys by account_id + feature_version. Add indexes for latest snapshot lookups and a service method to materialize a full account state object.
+
+---
+
 ## OPS-004 — Add audit log, idempotency keys, and outbox pattern
 
 | Field | Value |
@@ -121,6 +210,64 @@ Implement append-only audit events, outbox rows for side effects, and idempotenc
 ### Cursor brief
 
 Add an `audit_events` append-only table and an `outbox_events` table. Wrap all external actions—send email, open intake room, create checkout, provision workspace—in a transaction that writes an outbox row. Add idempotency keys on workers and HTTP handlers. Build a generic worker utility that claims outbox rows with a lease and retries safely.
+
+---
+
+## SIE-004 — Build decision-trace schema and replay hooks
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Estimate** | 5 pts |
+| **Depends on** | OPS-004, SIE-001, SIE-003 |
+| **Status** | `backlog` |
+
+### Why this exists
+
+Every important sales-intelligence decision needs a machine-readable trace. Store which signals, features, rules, and model outputs produced each contact/no-contact decision so you can explain, audit, and replay it.
+
+### Scope
+
+Decision trace table; every contact decision stores upstream evidence IDs; replay endpoint can rebuild a decision for one account.
+
+### Acceptance criteria
+
+- [ ] Decision trace table exists
+- [ ] Every contact decision stores upstream evidence IDs
+- [ ] Replay endpoint can rebuild a decision from stored inputs and return a diff if outputs changed
+
+### Cursor brief
+
+Create a decision_trace model plus a replay service. Persist input feature snapshots, rule hits, model scores, and final reason codes. Add a FastAPI endpoint to replay a decision from stored inputs and return a diff if outputs changed.
+
+---
+
+## SIE-005 — Add event topics and worker contracts
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Estimate** | 3 pts |
+| **Depends on** | SIE-002 |
+| **Status** | `backlog` |
+
+### Why this exists
+
+Standardize the Redis queue topics and payload shapes used by crawlers, parsers, fusion, scoring, buyer resolution, and message strategy workers so the system remains decomposed and testable.
+
+### Scope
+
+Topic names, payload schemas, versioned contracts, and local integration tests.
+
+### Acceptance criteria
+
+- [ ] Topic names documented
+- [ ] Payload schemas versioned
+- [ ] Workers can publish and consume example messages in local dev
+
+### Cursor brief
+
+Define queue topics for crawl_requested, raw_signal_extracted, normalized_signal_ready, account_fusion_requested, buyer_resolution_requested, contact_decision_requested, and message_strategy_requested. Add shared serializers and local integration tests.
 
 ---
 

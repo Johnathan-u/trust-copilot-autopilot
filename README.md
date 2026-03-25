@@ -2,14 +2,16 @@
 
 Autonomous closed-loop sales engine for Trust Copilot: discover accounts showing trust-review pain, qualify them, reach out with policy-safe outreach, deliver proof artifacts, and close without a human seller.
 
+Integrates the **Sales Intelligence Engine (SIE)** — a multi-source discovery, signal fusion, pain inference, buyer reasoning, and contact decisioning layer designed for high-volume candidate processing with quality-first outreach.
+
 ## Architecture
 
 The system is split into three lanes with independent budgets:
 
 | Lane | Purpose | Scale target |
 |------|---------|--------------|
-| **Discovery** | Crawl public sources, extract trust-review signals, canonicalize companies | Up to 1M candidate pages/day |
-| **Qualification** | Dedupe, score ICP + trigger urgency, resolve buyers, generate briefs | Subset of discovery output |
+| **Discovery** | Crawl public sources, extract signals, fuse accounts, score, resolve buyers | Up to 1M candidate pages/day |
+| **Qualification** | ICP fit, pain inference, urgency, value, contact decisions | Subset of discovery output |
 | **Contact** | Policy-gated outreach, reply handling, intake, fulfillment, payment | Reputation-budgeted; never scales with discovery |
 
 ## Object model
@@ -32,6 +34,25 @@ raw_signal -> candidate_account -> qualified_account -> contactable -> contacted
 
 Terminal: `blocked`, `suppressed`, `snoozed`
 
+## Technology stack
+
+### Core
+- **Next.js** — internal ops UI, intake rooms, proof pages
+- **FastAPI** — orchestration APIs and webhooks
+- **PostgreSQL** — relational state, migrations, state machine
+- **pgvector** — semantic similarity for account memory
+- **Redis** — queues, caching, rate limiting
+- **MinIO** — object storage for uploads and artifacts
+
+### Required (new)
+- **Playwright** — JS-rendered public pages (careers, trust, team)
+- **Trafilatura** — robust HTML-to-text extraction before signal parsing
+
+### Optional (new)
+- **LightGBM** — learned lead-ranking model (after rule-based scoring works)
+- **MLflow** — model registry/versioning (if LightGBM is productionized)
+- **ClickHouse** — raw discovery telemetry (only if PostgreSQL cannot keep up)
+
 ## Repo layout
 
 ```
@@ -40,40 +61,48 @@ sales/
 │   ├── web/              # Next.js — internal ops, intake rooms, proof pages
 │   └── api/              # FastAPI — orchestration APIs and webhooks
 ├── workers/
-│   ├── discovery/         # Signal crawling and extraction
-│   ├── qualification/     # Scoring, buyer resolution, brief generation
+│   ├── discovery/         # Source crawling, fetching, extraction, fusion
+│   ├── qualification/     # Scoring, buyer resolution, contact decisions
 │   ├── send/              # Outbound email orchestration
 │   ├── inbox/             # Inbound mail processing and thread assembly
 │   ├── fulfillment/       # Trust Copilot job runner and proof rendering
 │   └── retention/         # Post-sale nudges and usage growth
 ├── libs/
-│   ├── contracts/         # Typed DTOs and shared schemas
+│   ├── contracts/         # Typed DTOs, signal contracts, shared schemas
 │   └── policy/            # Deterministic policy engine
 ├── db/
 │   └── migrations/        # Postgres schema and state machine migrations
 ├── infra/                 # Docker, deploy configs, worker topology
-└── backlog/               # Ticket backlog (34 tickets, 5 increments)
+└── backlog/               # Ticket backlog (69 tickets, 9 increments)
 ```
 
 ## Backlog
 
 See [`backlog/README.md`](backlog/README.md) for the full ticket index, dependency graph, and build order.
 
-**34 tickets across 5 increments (196 total points):**
+**69 tickets across 9 increments:**
 
-1. **Increment 1 — Foundation** (5 tickets, 24 pts): Runtime, state model, audit, idempotency
-2. **Increment 2 — Discovery** (7 tickets, 42 pts): Source adapters, fetcher, extraction, scoring, buyer resolution
-3. **Increment 3 — Outreach** (8 tickets, 52 pts): Policy engine, suppression, composer, send, inbox, reply handling, kill switches
-4. **Increment 4 — Proof & payment** (7 tickets, 39 pts): Intake rooms, fulfillment, proof packs, offers, Stripe, onboarding
-5. **Increment 5 — Scale & quality** (7 tickets, 39 pts): Sharding, fingerprinting, evals, guardrails, dashboards, runbooks
+1. **Foundation & data model** (10 tickets): Runtime, state model, intelligence schema, audit, idempotency, event topics
+2. **Signal acquisition** (8 tickets): Source registry, fetcher, Playwright, Trafilatura, job boards, RSS, page classifier, dedupe
+3. **Signal normalization & fusion** (6 tickets): Atomic extraction, trigger taxonomy, account fusion, narrative, decay, negatives
+4. **Pain, ICP & value reasoning** (6 tickets): Firmographics, pain types, ICP score, urgency, value, micro-segments
+5. **Buyer & contact reasoning** (6 tickets): Buyer resolver, role-to-pain map, fallback chain, competitors, contact decisions, memory
+6. **Message strategy & outreach** (12 tickets): Strategy objects, policy engine, composer, mailbox orchestrator, send, inbox, replies, kill switches
+7. **Proof, payment & onboarding** (7 tickets): Intake rooms, fulfillment, proof packs, offers, Stripe, onboarding, retention
+8. **Learning & evaluation** (6 tickets): Outcomes, labeling, ranking model, offline evals, shadow scoring, rollback
+9. **Scale, ops & quality** (8 tickets): Source health, conflict detection, ClickHouse, throughput controls, embeddings, guardrails, dashboards, runbooks
 
 ## Build order
 
 1. Finish Increment 1 completely
-2. Build Increment 2 until you can generate high-confidence briefs
-3. Build Increment 3 — keep send volumes tiny until policy and suppression are proven
-4. Build Increment 4 so the system can close without demos
-5. Only then build Increment 5 to scale discovery and quality
+2. Build Increment 2 — crawl infrastructure
+3. Build Increment 3 — signal fusion and account state
+4. Build Increment 4 — scoring and value reasoning
+5. Build Increment 5 — buyer resolution and contact decisions
+6. Build Increment 6 — keep send volumes tiny until policy and suppression are proven
+7. Build Increment 7 so the system can close without demos
+8. Build Increment 8 — feedback loop and learned ranking
+9. Only then build Increment 9 to scale discovery and quality
 
 ## Working with Cursor
 
@@ -83,12 +112,11 @@ See [`backlog/README.md`](backlog/README.md) for the full ticket index, dependen
 4. Require tests and an idempotent happy path before merging
 5. Do not let Cursor "also clean up unrelated code"
 
-## What NOT to build in v1
+## Explicit non-goals
 
-- LinkedIn bots or scraping automation
-- Multi-channel social blasting
-- Bought lead lists
-- Custom quote workflows
-- Human approval inboxes for every message
-- Fancy analytics before audit logging and kill switches
-- "Growth hacks" that bypass policy checks
+- No LinkedIn automation or platform-prohibited scraping
+- No assumption that outbound email volume should scale to 1M/day
+- The 1M/day target applies to **discovery candidate processing**, not email sends
+- No bought lead lists or multi-channel social blasting
+- No custom quote workflows in v1
+- No fancy analytics before audit logging and kill switches

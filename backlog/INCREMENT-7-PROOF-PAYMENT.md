@@ -1,4 +1,4 @@
-# Increment 4 — Proof, payment, and onboarding loop
+# Increment 7 — Proof, payment, and onboarding loop
 
 **Goal:** Turn positive replies into proof artifacts, payment, and activation without a human seller.
 

@@ -1,70 +1,113 @@
 "use client";
 
-import { Shield, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export default function TrustRoomLandingPage() {
+const MOCK_DESTINATION_URL =
+  "https://vendor.example.com/trust/onboarding/welcome";
+
+function Spinner({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "size-8 shrink-0 rounded-full border-2 border-border-default border-t-syntax-param animate-spin",
+        className
+      )}
+      aria-hidden
+    />
+  );
+}
+
+export default function TrustCopilotRedirectPage() {
   const params = useParams<{ token: string }>();
-  const token = params.token;
+  const token = typeof params.token === "string" ? params.token : "";
+  const [phase, setPhase] = useState<"redirecting" | "revealed">("redirecting");
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setPhase("revealed"), 2000);
+    return () => window.clearTimeout(t);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-bg-root px-6 py-16 md:py-24">
-      <div className="mx-auto flex max-w-lg flex-col items-center">
-        <div className="w-full rounded-2xl border border-border-default bg-bg-editor/80 p-10 shadow-[0_0_0_1px_rgba(78,201,176,0.06),0_24px_64px_-12px_rgba(0,0,0,0.45)] backdrop-blur-sm md:p-12">
-          <div className="mb-8 flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-syntax-class/25 bg-syntax-class/10 text-syntax-class">
-              <Shield className="h-8 w-8" strokeWidth={1.5} aria-hidden />
-            </div>
-          </div>
-
-          <p className="text-center font-mono text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-syntax-builtin">
+    <div className="flex min-h-screen flex-col bg-bg-root font-sans">
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
+          <p className="text-center font-mono text-sm font-semibold tracking-tight text-text-primary">
             Trust Copilot
           </p>
-          <h1 className="mt-3 text-center font-mono text-2xl font-semibold tracking-tight text-text-primary md:text-[1.75rem]">
-            Trust Room
-          </h1>
-          <p className="mt-4 text-center text-[15px] leading-relaxed text-text-secondary">
-            Securely upload your compliance questionnaire or security documents.
-            Your vendor uses Trust Copilot to review submissions in a controlled,
-            encrypted environment.
+          <p className="mt-1 text-center text-xs text-text-muted">
+            Secure link handler
           </p>
 
-          <div className="mt-10 flex flex-col gap-3">
-            <Button size="lg" className="h-12 w-full text-sm">
-              <Upload className="h-4 w-4" aria-hidden />
-              Upload documents
-            </Button>
-            <p className="text-center text-xs text-text-muted">
-              Reference: <span className="font-mono text-text-secondary">{token}</span>
-            </p>
-          </div>
+          {phase === "redirecting" && (
+            <div className="mt-10 flex flex-col items-center text-center">
+              <Spinner className="size-9 border-t-accent-green" />
+              <p className="mt-6 text-sm font-medium text-text-primary">
+                Redirecting…
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                You&apos;re being redirected to:{" "}
+                <span className="font-mono text-xs text-syntax-string break-all">
+                  {MOCK_DESTINATION_URL}
+                </span>
+              </p>
+              <a
+                href={MOCK_DESTINATION_URL}
+                className="mt-6 text-sm text-syntax-keyword underline decoration-border-default underline-offset-4 transition-colors hover:text-syntax-param"
+              >
+                Click here if not redirected
+              </a>
+            </div>
+          )}
 
-          <ul className="mt-10 space-y-3 border-t border-border-default pt-8 text-sm text-text-secondary">
-            <li className="flex gap-3">
-              <span className="mt-0.5 font-mono text-syntax-class">✓</span>
-              <span>
-                Files are encrypted in transit and at rest. Access is limited to
-                authorized reviewers on your vendor&apos;s side.
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="mt-0.5 font-mono text-syntax-class">✓</span>
-              <span>
-                We do not sell your data. Submissions are used only to fulfill
-                this trust review.
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="mt-0.5 font-mono text-syntax-class">✓</span>
-              <span>
-                Need help? Contact your vendor point of contact—this link is
-                unique to your organization.
-              </span>
-            </li>
-          </ul>
+          {phase === "revealed" && (
+            <div className="mt-10 animate-[fade-in_0.35s_ease-out]">
+              <Card className="border-border-default bg-bg-card">
+                <CardHeader>
+                  <CardTitle className="text-syntax-class">
+                    Destination
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-[0.65rem] font-mono font-semibold uppercase tracking-wider text-text-muted">
+                      URL
+                    </p>
+                    <p className="mt-1 break-all font-mono text-sm text-syntax-string">
+                      {MOCK_DESTINATION_URL}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[0.65rem] font-mono font-semibold uppercase tracking-wider text-text-muted">
+                      Tracking
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Badge variant="info">click_id</Badge>
+                      <span className="font-mono text-xs text-text-secondary">
+                        {token || "—"}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="border-t border-border-default pt-4 text-xs leading-relaxed text-text-muted">
+                    <span className="font-mono text-syntax-builtin">Privacy:</span>{" "}
+                    This redirect was logged for analytics. You can opt out at any
+                    time.
+                  </p>
+                  <Button asChild size="lg" className="w-full">
+                    <a href={MOCK_DESTINATION_URL} rel="noopener noreferrer">
+                      Continue to destination
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

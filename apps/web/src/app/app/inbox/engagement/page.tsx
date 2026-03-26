@@ -1,235 +1,231 @@
 "use client";
 
+import type { ComponentProps } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { cn } from "@/lib/utils";
 
-type EngStatus = "sent" | "opened" | "clicked" | "replied" | "bounced";
+const FUNNEL = [
+  { label: "Email sent", count: 1000, bar: "bg-syntax-builtin" },
+  { label: "Opened", count: 420, bar: "bg-syntax-class" },
+  { label: "CTA clicked", count: 89, bar: "bg-syntax-keyword" },
+  { label: "Proof viewed", count: 62, bar: "bg-syntax-string" },
+  { label: "Offer viewed", count: 34, bar: "bg-syntax-decorator" },
+  { label: "Checkout", count: 12, bar: "bg-syntax-function" },
+  { label: "Paid", count: 8, bar: "bg-accent-green" },
+] as const;
 
-const ROWS: {
-  recipient: string;
-  company: string;
-  subject: string;
-  status: EngStatus;
-  opens: number;
-  clicks: number;
-  replied: boolean;
-  sent: string;
-  lastEvent: string;
+type CtaType = "proof" | "offer" | "calendar";
+
+const CTA_EVENTS: {
+  account: string;
+  ctaType: CtaType;
+  clicked: string;
+  time: string;
+  destination: string;
+  converted: boolean;
 }[] = [
   {
-    recipient: "alex.rivera@nimbussec.io",
-    company: "Nimbus Security",
-    subject: "SOC 2 readiness — scoped assessment",
-    status: "opened",
-    opens: 3,
-    clicks: 0,
-    replied: false,
-    sent: "Mar 25, 9:14 AM",
-    lastEvent: "Open · 2h ago",
+    account: "Nimbus Security",
+    ctaType: "proof",
+    clicked: "Proof pack — SOC 2",
+    time: "Mar 25, 10:04 AM",
+    destination: "/trust/proof/soc2-redacted",
+    converted: true,
   },
   {
-    recipient: "procurement@cloudvault.com",
-    company: "CloudVault",
-    subject: "Vendor security packet summary",
-    status: "replied",
-    opens: 2,
-    clicks: 1,
-    replied: true,
-    sent: "Mar 24, 4:02 PM",
-    lastEvent: "Reply · 6h ago",
+    account: "CloudVault",
+    ctaType: "offer",
+    clicked: "Pilot pricing sheet",
+    time: "Mar 25, 9:52 AM",
+    destination: "/offers/pilot-2025q1",
+    converted: false,
   },
   {
-    recipient: "security@trustlayer.co",
-    company: "TrustLayer",
-    subject: "Evidence collection for renewals",
-    status: "sent",
-    opens: 0,
-    clicks: 0,
-    replied: false,
-    sent: "Mar 25, 8:55 AM",
-    lastEvent: "Delivered",
+    account: "BlueHarbor Finance",
+    ctaType: "calendar",
+    clicked: "Book security review",
+    time: "Mar 25, 9:18 AM",
+    destination: "/calendar/ffiec-slot",
+    converted: true,
   },
   {
-    recipient: "cto@irongate.io",
-    company: "IronGate SaaS",
-    subject: "Map controls to questionnaires",
-    status: "clicked",
-    opens: 1,
-    clicks: 2,
-    replied: false,
-    sent: "Mar 25, 8:41 AM",
-    lastEvent: "CTA click · 35m ago",
+    account: "IronGate SaaS",
+    ctaType: "proof",
+    clicked: "Control mapping sample",
+    time: "Mar 25, 8:44 AM",
+    destination: "/trust/proof/controls",
+    converted: false,
   },
   {
-    recipient: "grc@polarishealth.org",
-    company: "Polaris Health",
-    subject: "HIPAA + SOC 2 overlap",
-    status: "bounced",
-    opens: 0,
-    clicks: 0,
-    replied: false,
-    sent: "Mar 24, 11:18 AM",
-    lastEvent: "Hard bounce",
+    account: "Vertex Data",
+    ctaType: "offer",
+    clicked: "Trust room upgrade",
+    time: "Mar 24, 6:12 PM",
+    destination: "/offers/trust-room-plus",
+    converted: false,
   },
   {
-    recipient: "dpo@vertexdata.ai",
-    company: "Vertex Data",
-    subject: "Trust room invite",
-    status: "opened",
-    opens: 1,
-    clicks: 0,
-    replied: false,
-    sent: "Mar 23, 6:55 PM",
-    lastEvent: "Room view · 1d ago",
+    account: "QuantMesh",
+    ctaType: "proof",
+    clicked: "Shared responsibility PDF",
+    time: "Mar 24, 2:22 PM",
+    destination: "/trust/proof/srm",
+    converted: true,
   },
   {
-    recipient: "vendor-risk@blueharbor.bank",
-    company: "BlueHarbor Finance",
-    subject: "FFIEC vendor checklist",
-    status: "replied",
-    opens: 4,
-    clicks: 2,
-    replied: true,
-    sent: "Mar 22, 10:30 AM",
-    lastEvent: "Reply · 2d ago",
+    account: "LatticeWorks",
+    ctaType: "calendar",
+    clicked: "Automation demo",
+    time: "Mar 24, 11:05 AM",
+    destination: "/calendar/demo-30",
+    converted: false,
   },
   {
-    recipient: "it@latticeworks.dev",
-    company: "LatticeWorks",
-    subject: "Questionnaire automation pilot",
-    status: "sent",
-    opens: 0,
-    clicks: 0,
-    replied: false,
-    sent: "Mar 25, 7:05 AM",
-    lastEvent: "Queued send",
-  },
-  {
-    recipient: "secops@quantmesh.io",
-    company: "QuantMesh",
-    subject: "Shared responsibility model one-pager",
-    status: "clicked",
-    opens: 2,
-    clicks: 1,
-    replied: false,
-    sent: "Mar 24, 2:11 PM",
-    lastEvent: "Link click · 18h ago",
-  },
-  {
-    recipient: "privacy@northwind.travel",
-    company: "Northwind Travel",
-    subject: "Unsubscribe confirmation",
-    status: "bounced",
-    opens: 0,
-    clicks: 0,
-    replied: false,
-    sent: "Mar 21, 9:00 AM",
-    lastEvent: "Suppressed list",
+    account: "HelioFin",
+    ctaType: "offer",
+    clicked: "Security addendum",
+    time: "Mar 24, 9:30 AM",
+    destination: "/offers/dpa-addendum",
+    converted: true,
   },
 ];
 
-function statusCellClass(s: EngStatus) {
-  switch (s) {
-    case "replied":
-      return "text-accent-green";
-    case "opened":
-      return "text-syntax-builtin";
-    case "clicked":
-      return "text-accent-yellow";
-    case "bounced":
-      return "text-accent-red";
+function ctaBadge(t: CtaType): ComponentProps<typeof Badge>["variant"] {
+  switch (t) {
+    case "proof":
+      return "discovery";
+    case "offer":
+      return "qualification";
+    case "calendar":
+      return "contact";
     default:
-      return "text-text-secondary";
+      return "default";
   }
 }
 
-export default function EngagementTrackerPage() {
+export default function CtaMonitorPage() {
+  const maxCount = FUNNEL[0].count;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-mono text-lg font-bold text-text-primary">
-          <span className="text-syntax-builtin">def</span> engagement_tracker
+          <span className="text-syntax-builtin">def</span> cta_monitor
           <span className="text-text-muted">(</span>
           <span className="text-syntax-class">Analytics</span>
           <span className="text-text-muted">):</span>
         </h1>
         <p className="text-xs text-text-muted mt-1">
-          Opens, clicks, replies, and list health across outbound touches
+          CTA clicks through proof, offer, and calendar destinations
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <KpiCard label="Total sent" value="12,480" accent="blue" />
-        <KpiCard label="Unique opens" value="5,142" sub="41.2% of sent" accent="teal" />
-        <KpiCard label="Reply rate" value="8.7%" accent="green" />
-        <KpiCard label="Bounce rate" value="1.1%" accent="red" />
-        <KpiCard label="Unsubscribe rate" value="0.09%" accent="orange" />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard label="Total CTAs sent" value="2,840" sub="rolling 14d" accent="blue" />
+        <KpiCard label="Click rate" value="8.9%" sub="of delivered" accent="teal" />
+        <KpiCard label="Proof pack views" value={612} accent="purple" />
+        <KpiCard label="Offer page views" value={334} accent="green" />
       </div>
+
+      <Card className="border-border-default bg-bg-card overflow-hidden">
+        <CardHeader className="py-3">
+          <CardTitle className="font-mono text-sm text-syntax-function">
+            Conversion funnel
+          </CardTitle>
+          <p className="text-xs text-text-muted font-mono">
+            Stacked drop-off from email send → revenue
+          </p>
+        </CardHeader>
+        <CardContent className="pb-6">
+          <div className="mx-auto max-w-md flex flex-col items-stretch gap-3">
+            {FUNNEL.map((step, i) => {
+              const prev = i === 0 ? step.count : FUNNEL[i - 1].count;
+              const rateFromPrev =
+                prev > 0 ? ((step.count / prev) * 100).toFixed(1) : "—";
+              const widthPct = Math.max(
+                8,
+                Math.round((step.count / maxCount) * 100)
+              );
+              return (
+                <div key={step.label} className="flex flex-col gap-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-mono text-xs font-semibold text-text-primary">
+                      {step.label}
+                    </span>
+                    <span className="font-mono text-xs tabular-nums text-syntax-param">
+                      {step.count.toLocaleString()}
+                    </span>
+                  </div>
+                  <div
+                    className={cn(
+                      "h-9 rounded-md flex items-center justify-end pr-3 transition-all border border-border-default/40",
+                      step.bar,
+                      "min-w-[2rem]"
+                    )}
+                    style={{ width: `${widthPct}%` }}
+                  >
+                    <span className="font-mono text-[0.65rem] font-bold text-bg-root drop-shadow-sm">
+                      {i === 0 ? "100%" : `${rateFromPrev}%`}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[0.6rem] text-text-muted">
+                    {i === 0
+                      ? "Baseline — 100% of sent cohort"
+                      : `Conversion from previous step`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="overflow-hidden border-border-default bg-bg-editor">
         <CardHeader className="py-3">
-          <CardTitle>Engagement by recipient</CardTitle>
+          <CardTitle className="font-mono text-sm">Recent CTA events</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left border-collapse">
+            <table className="w-full min-w-[720px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-border-default bg-bg-card font-mono text-[0.62rem] uppercase tracking-wider text-text-muted">
-                  <th className="px-4 py-3 font-medium">Recipient</th>
-                  <th className="px-4 py-3 font-medium">Company</th>
-                  <th className="px-4 py-3 font-medium">Subject</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium text-right">Opens</th>
-                  <th className="px-4 py-3 font-medium text-right">Clicks</th>
-                  <th className="px-4 py-3 font-medium">Reply?</th>
-                  <th className="px-4 py-3 font-medium">Sent time</th>
-                  <th className="px-4 py-3 font-medium">Last event</th>
+                  <th className="px-4 py-3 font-medium">Account</th>
+                  <th className="px-4 py-3 font-medium">CTA type</th>
+                  <th className="px-4 py-3 font-medium">Clicked</th>
+                  <th className="px-4 py-3 font-medium">Time</th>
+                  <th className="px-4 py-3 font-medium">Destination</th>
+                  <th className="px-4 py-3 font-medium">Converted?</th>
                 </tr>
               </thead>
               <tbody>
-                {ROWS.map((row, i) => (
+                {CTA_EVENTS.map((row, i) => (
                   <tr
                     key={i}
                     className="border-b border-border-default last:border-0 hover:bg-bg-card-hover/60 transition-colors"
                   >
-                    <td className="px-4 py-3 font-mono text-xs text-syntax-string max-w-[200px] truncate">
-                      {row.recipient}
-                    </td>
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-text-primary">
-                      {row.company}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-text-secondary max-w-[220px]">
-                      {row.subject}
+                      {row.account}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          "font-mono text-xs font-semibold capitalize",
-                          statusCellClass(row.status)
-                        )}
-                      >
-                        {row.status}
-                      </span>
+                      <Badge variant={ctaBadge(row.ctaType)}>{row.ctaType}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs tabular-nums text-syntax-param">
-                      {row.opens}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs tabular-nums text-syntax-keyword">
-                      {row.clicks}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs">
-                      {row.replied ? (
-                        <span className="text-accent-green">Yes</span>
-                      ) : (
-                        <span className="text-text-muted">—</span>
-                      )}
+                    <td className="px-4 py-3 text-xs text-text-secondary max-w-[200px]">
+                      {row.clicked}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-syntax-decorator whitespace-nowrap">
-                      {row.sent}
+                      {row.time}
                     </td>
-                    <td className="px-4 py-3 text-xs text-text-secondary whitespace-nowrap">
-                      {row.lastEvent}
+                    <td className="px-4 py-3 font-mono text-xs text-syntax-string max-w-[240px] truncate">
+                      {row.destination}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs">
+                      {row.converted ? (
+                        <span className="text-accent-green">Yes</span>
+                      ) : (
+                        <span className="text-text-muted">No</span>
+                      )}
                     </td>
                   </tr>
                 ))}

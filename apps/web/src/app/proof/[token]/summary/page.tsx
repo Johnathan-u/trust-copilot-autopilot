@@ -1,193 +1,139 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ProgressBar } from "@/components/ui/progress-bar";
+import { cn } from "@/lib/utils";
 
 const COMPANY_NAME = "Nimbus Security";
-const TOTAL_SCORE = 72;
 
-const categoryScores = [
+const stats = [
+  { label: "Trust Score", value: "78", accent: "text-syntax-param" as const },
+  { label: "Documents Analyzed", value: "4", accent: "text-syntax-class" as const },
+  { label: "Gaps Found", value: "2", accent: "text-accent-yellow" as const },
+  { label: "Time to Remediate", value: "~45 days", accent: "text-syntax-string" as const },
+];
+
+const testimonials = [
   {
-    name: "Trust Infrastructure",
-    score: 80,
-    detail:
-      "SSO, MFA, and prod access reviews are in place. Segmentation diagrams should be refreshed for the latest regions.",
+    quote: "Cut our security questionnaire cycle in half.",
+    author: "VP Eng",
+    company: "Series B SaaS",
   },
   {
-    name: "Policy Documentation",
-    score: 68,
-    detail:
-      "Acceptable use and data handling policies are published. Encryption standards need explicit key-management references.",
+    quote: "Finally one place buyers trust — without the spreadsheet chaos.",
+    author: "Head of IT",
+    company: "Fintech",
   },
   {
-    name: "Vendor Management",
-    score: 72,
-    detail:
-      "Tier-1 vendors have annual reviews. Tier-2 onboarding checklists are inconsistent across business units.",
-  },
-  {
-    name: "Incident Response",
-    score: 60,
-    detail:
-      "On-call and severity definitions are clear. Postmortems are internal-only—customer comms templates are missing.",
-  },
-  {
-    name: "Data Privacy",
-    score: 82,
-    detail:
-      "DSAR workflow and subprocessors are documented. Cross-border transfer assessments need legal sign-off.",
+    quote: "Audit-ready narratives without hiring another GRC headcount.",
+    author: "CISO",
+    company: "Healthtech",
   },
 ];
 
-const phases = [
-  {
-    phase: "Phase 1 — Days 1–30",
-    title: "Stabilize evidence",
-    items: [
-      "Wire SOC 2 controls to ticketing and IAM exports",
-      "Publish Trust Center updates and subprocessors",
-    ],
-  },
-  {
-    phase: "Phase 2 — Days 31–60",
-    title: "Close structural gaps",
-    items: [
-      "ISO SoA draft + policy crosswalk",
-      "Vendor tier-2 review backlog to under ten open items",
-    ],
-  },
-  {
-    phase: "Phase 3 — Days 61–90",
-    title: "Prove maturity",
-    items: [
-      "Tabletop exercise with documented outcomes",
-      "Customer-facing incident comms playbook v1",
-    ],
-  },
-];
-
-export default function ProofSummaryPage() {
+export default function ProofPackSummaryLandingPage() {
   const params = useParams<{ token: string }>();
-  const token = params.token;
+  const token = typeof params.token === "string" ? params.token : "";
+  const proofHref = token ? `/proof/${token}` : "/proof";
 
   return (
     <div className="min-h-screen bg-bg-root px-4 py-12 font-sans sm:px-6 md:py-16">
-      <div className="mx-auto max-w-3xl">
-        <header className="mb-10 text-center">
+      <div className="mx-auto max-w-lg">
+        <header className="text-center">
           <p className="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-syntax-keyword">
             Trust Copilot
           </p>
-          <h1 className="mt-3 font-mono text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
-            Executive Summary
+          <h1 className="mt-6 font-mono text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+            Your proof pack is ready
           </h1>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <Badge variant="tech" className="normal-case tracking-normal">
+          <div className="mt-4 flex justify-center">
+            <Badge variant="tech" className="normal-case tracking-normal text-sm">
               {COMPANY_NAME}
             </Badge>
-            <span className="font-mono text-xs text-text-muted">{token}</span>
           </div>
+          {token ? (
+            <p className="mt-3 font-mono text-[0.6rem] text-text-muted">
+              Delivery ID: <span className="text-syntax-string">{token}</span>
+            </p>
+          ) : null}
         </header>
 
-        <Card className="mb-8 border-border-default bg-bg-editor">
-          <CardContent className="pt-6">
-            <p className="text-[15px] leading-relaxed text-text-secondary">
-              {COMPANY_NAME} demonstrates a credible trust posture for growth-stage buyers: public
-              artifacts are fresh, and core security practices are recognizable in diligence. The
-              largest lift is turning informal processes into auditor-grade evidence—especially
-              around change management, vendor attestations, and exercised incident playbooks.
-              Closing those gaps in the next quarter materially reduces questionnaire cycle time
-              and competitive discount pressure.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="mb-8 border-2 border-border-active bg-bg-card">
-          <CardHeader className="border-border-default">
-            <CardTitle className="text-lg text-syntax-class">Total Trust Readiness</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="flex items-baseline gap-1">
-                <span className="font-mono text-6xl font-semibold text-syntax-param">
-                  {TOTAL_SCORE}
-                </span>
-                <span className="font-mono text-xl text-text-muted">/100</span>
-              </div>
-              <Badge variant="success">Good</Badge>
-            </div>
-            <ProgressBar
-              className="mt-4"
-              value={TOTAL_SCORE}
-              color="var(--color-accent-green)"
-              showLabel
-            />
-          </CardContent>
-        </Card>
-
-        <section className="space-y-4">
-          <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-syntax-builtin">
-            Detailed scoring breakdown
-          </h2>
-          {categoryScores.map((cat) => (
-            <Card
-              key={cat.name}
-              className="border-border-default bg-bg-editor hover:border-border-active"
+        <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-2">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="rounded-lg border border-border-default bg-bg-card px-3 py-3 text-center"
             >
-              <CardHeader className="py-3">
-                <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                  <CardTitle className="text-syntax-param">{cat.name}</CardTitle>
-                  <span className="font-mono text-sm font-semibold text-text-primary">
-                    {cat.score}
-                    <span className="text-text-muted">/100</span>
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-0">
-                <ProgressBar
-                  value={cat.score}
-                  color="var(--color-syntax-class)"
-                />
-                <p className="text-sm leading-relaxed text-text-secondary">{cat.detail}</p>
-              </CardContent>
-            </Card>
+              <p className={cn("font-mono text-lg font-semibold sm:text-xl", s.accent)}>
+                {s.value}
+              </p>
+              <p className="mt-1 text-[0.65rem] leading-snug text-text-secondary">{s.label}</p>
+            </div>
           ))}
-        </section>
+        </div>
 
-        <section className="mt-10">
-          <h2 className="mb-4 font-mono text-sm font-semibold uppercase tracking-wider text-syntax-string">
-            Recommended 90-day plan
-          </h2>
-          <div className="space-y-4">
-            {phases.map((p) => (
-              <Card key={p.phase} className="border-border-default bg-bg-editor">
-                <CardHeader>
-                  <CardTitle className="text-syntax-keyword">{p.phase}</CardTitle>
-                  <p className="font-mono text-xs text-text-secondary">{p.title}</p>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <ul className="space-y-2 text-sm text-text-secondary">
-                    {p.items.map((item) => (
-                      <li key={item} className="flex gap-2">
-                        <span className="font-mono text-accent-green">▸</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+        <div className="mt-10 space-y-3">
+          <Card className="border-border-default bg-bg-card">
+            <CardContent className="py-5">
+              <p className="text-center text-xs text-text-muted">Primary</p>
+              <Button asChild size="lg" className="mt-2 w-full">
+                <Link href={proofHref}>View Full Report</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border-default bg-bg-editor">
+            <CardContent className="py-5">
+              <p className="text-center text-xs text-text-muted">Export</p>
+              <Button type="button" variant="outline" size="lg" className="mt-2 w-full">
+                Download PDF Summary
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border-default bg-bg-editor">
+            <CardContent className="py-5">
+              <p className="text-center text-xs text-text-muted">Expert help</p>
+              <Button type="button" variant="outline" size="lg" className="mt-2 w-full">
+                Schedule Expert Review
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <section className="mt-14 border-t border-border-default pt-10">
+          <p className="text-center font-mono text-sm font-semibold text-text-primary">
+            Join 200+ companies using Trust Copilot
+          </p>
+          <ul className="mt-6 space-y-4">
+            {testimonials.map((t, i) => (
+              <li
+                key={i}
+                className="rounded-lg border border-border-default bg-bg-card px-4 py-3"
+              >
+                <p className="text-sm italic leading-relaxed text-text-secondary">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <p className="mt-2 font-mono text-[0.65rem] text-text-muted">
+                  — {t.author}
+                  {t.company ? (
+                    <>
+                      , <span className="text-text-secondary">{t.company}</span>
+                    </>
+                  ) : null}
+                </p>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
 
-        <footer className="mt-12 border-t border-border-default pt-10 text-center">
-          <Button size="lg" className="h-11 min-w-[260px]">
-            Get Started with Trust Copilot
-          </Button>
-          <p className="mt-6 text-xs text-text-muted">
-            This summary is confidential and prepared solely for {COMPANY_NAME}.
+        <footer className="mt-14 border-t border-border-default pt-8 text-center">
+          <p className="text-xs leading-relaxed text-text-muted">
+            <span className="font-mono text-text-secondary">Security note:</span> This link is
+            unique to your organization. Do not forward. Access may be logged for compliance.
           </p>
         </footer>
       </div>

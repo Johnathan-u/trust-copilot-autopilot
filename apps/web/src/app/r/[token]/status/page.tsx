@@ -1,231 +1,181 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { Fragment } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const MOCK_EMAIL = "alex.morgan@example.com";
+const COMPANY_NAME = "Nimbus Security";
 
-type PrefRowProps = {
-  title: string;
-  description: string;
-  checked: boolean;
-  onToggle: () => void;
-  disabled?: boolean;
-};
+type StepState = "complete" | "active" | "pending";
 
-function PrefSwitch({
-  title,
-  description,
-  checked,
-  onToggle,
-  disabled,
-}: PrefRowProps) {
+const pipelineSteps: { id: string; label: string; state: StepState }[] = [
+  { id: "upload", label: "Upload Received", state: "complete" },
+  { id: "virus", label: "Virus Scan", state: "complete" },
+  { id: "extract", label: "Content Extraction", state: "active" },
+  { id: "map", label: "Compliance Mapping", state: "pending" },
+  { id: "report", label: "Report Generation", state: "pending" },
+];
+
+const fileRows = [
+  { name: "soc2-report-2025.pdf", status: "processing" as const },
+  { name: "security-policy-v3.docx", status: "queued" as const },
+  { name: "pentest-results.pdf", status: "completed" as const },
+];
+
+function Spinner({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex gap-4 rounded-lg border border-border-default bg-bg-editor px-4 py-3",
-        disabled && "opacity-50"
+        "size-4 shrink-0 rounded-full border-2 border-border-default border-t-syntax-param animate-spin",
+        className
       )}
-    >
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        disabled={disabled}
-        onClick={onToggle}
-        className="mt-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-syntax-param/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-root disabled:pointer-events-none"
-      >
-        <div
-          className={cn(
-            "relative h-6 w-11 rounded-full border border-border-default transition-colors",
-            checked ? "bg-syntax-class/25 border-syntax-class/40" : "bg-bg-input"
-          )}
-        >
-          <div
-            className={cn(
-              "absolute top-0.5 size-5 rounded-full bg-text-primary/90 shadow-sm transition-transform",
-              checked ? "left-[22px]" : "left-0.5"
-            )}
-          />
-        </div>
-      </button>
-      <div className="min-w-0 text-left">
-        <p className="font-mono text-sm font-medium text-text-primary">
-          {title}
-        </p>
-        <p className="mt-1 text-sm leading-relaxed text-text-secondary">
-          {description}
-        </p>
-      </div>
-    </div>
+      aria-hidden
+    />
   );
 }
 
-export default function TrustCopilotEmailPreferencesPage() {
+function fileStatusBadge(status: (typeof fileRows)[number]["status"]) {
+  switch (status) {
+    case "completed":
+      return <Badge variant="success">completed</Badge>;
+    case "processing":
+      return <Badge variant="info">processing</Badge>;
+    case "queued":
+      return <Badge variant="default">queued</Badge>;
+    default:
+      return <Badge variant="default">{status}</Badge>;
+  }
+}
+
+export default function DocumentProcessingStatusPage() {
   const params = useParams<{ token: string }>();
   const token = typeof params.token === "string" ? params.token : "";
 
-  const [productUpdates, setProductUpdates] = useState(true);
-  const [securityInsights, setSecurityInsights] = useState(true);
-  const [partnership, setPartnership] = useState(false);
-  const [unsubscribeAll, setUnsubscribeAll] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  const prefsDisabled = unsubscribeAll;
-
-  function toggleUnsubscribeAll(next: boolean) {
-    setSaved(false);
-    setUnsubscribeAll(next);
-    if (next) {
-      setProductUpdates(false);
-      setSecurityInsights(false);
-      setPartnership(false);
-    }
-  }
-
-  function handleSave() {
-    setSaved(true);
-  }
-
   return (
-    <div className="flex min-h-screen flex-col bg-bg-root font-sans">
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
-        <div className="w-full max-w-lg">
-          <p className="text-center font-mono text-sm font-semibold tracking-tight text-text-primary">
+    <div className="min-h-screen bg-bg-root px-4 py-12 font-sans sm:px-6 md:py-16">
+      <div className="mx-auto max-w-3xl">
+        <header className="mb-10 text-center">
+          <p className="font-mono text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-syntax-keyword">
             Trust Copilot
           </p>
-          <p className="mt-1 text-center text-xs text-text-muted">
-            Preference center
-          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <h1 className="font-mono text-xl font-semibold tracking-tight text-text-primary sm:text-2xl">
+              Document Processing Status
+            </h1>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <Badge variant="tech" className="normal-case tracking-normal">
+              {COMPANY_NAME}
+            </Badge>
+            {token ? (
+              <span className="font-mono text-[0.6rem] text-text-muted">
+                ref <span className="text-syntax-string">{token}</span>
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-2 text-xs text-text-muted">
+            <span
+              className="size-1.5 shrink-0 rounded-full bg-syntax-param animate-pulse"
+              aria-hidden
+            />
+            <span className="font-mono">Refreshing every 10s</span>
+          </div>
+        </header>
 
-          <Card className="mt-10 border-border-default bg-bg-card">
-            <CardHeader>
-              <div className="flex flex-wrap items-center gap-2">
-                <CardTitle className="text-text-primary">
-                  Email preferences for{" "}
-                  <span className="text-syntax-string">{MOCK_EMAIL}</span>
-                </CardTitle>
-                <Badge variant="info">Marketing</Badge>
-              </div>
-              {token ? (
-                <p className="mt-2 font-mono text-xs text-text-muted">
-                  Reference: {token}
-                </p>
-              ) : null}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <PrefSwitch
-                title="Product Updates"
-                description="Release notes, feature announcements, and product education tailored to your workspace."
-                checked={productUpdates}
-                disabled={prefsDisabled}
-                onToggle={() => {
-                  setSaved(false);
-                  setUnsubscribeAll(false);
-                  setProductUpdates((v) => !v);
-                }}
-              />
-              <PrefSwitch
-                title="Security Insights"
-                description="Threat summaries, compliance tips, and security program updates from Trust Copilot."
-                checked={securityInsights}
-                disabled={prefsDisabled}
-                onToggle={() => {
-                  setSaved(false);
-                  setUnsubscribeAll(false);
-                  setSecurityInsights((v) => !v);
-                }}
-              />
-              <PrefSwitch
-                title="Partnership Opportunities"
-                description="Invitations to programs, co-marketing, and ecosystem partnerships where relevant."
-                checked={partnership}
-                disabled={prefsDisabled}
-                onToggle={() => {
-                  setSaved(false);
-                  setUnsubscribeAll(false);
-                  setPartnership((v) => !v);
-                }}
-              />
-
-              <div
-                className={cn(
-                  "rounded-lg border px-4 py-3",
-                  "border-accent-red/35 bg-accent-red/[0.08]"
-                )}
-              >
-                <div className="flex gap-4">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={unsubscribeAll}
-                    onClick={() => toggleUnsubscribeAll(!unsubscribeAll)}
-                    className="mt-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-red/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-root"
-                  >
+        <Card className="mb-8 border-border-default bg-bg-card">
+          <CardHeader>
+            <CardTitle className="text-syntax-class">Processing pipeline</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <div className="flex min-w-[520px] items-start px-1">
+              {pipelineSteps.map((step, i) => (
+                <Fragment key={step.id}>
+                  {i > 0 ? (
                     <div
                       className={cn(
-                        "relative h-6 w-11 rounded-full border transition-colors",
-                        unsubscribeAll
-                          ? "border-accent-red/50 bg-accent-red/20"
-                          : "border-border-default bg-bg-input"
+                        "mt-[18px] h-0.5 min-w-[12px] flex-1",
+                        pipelineSteps[i - 1]!.state === "complete"
+                          ? "bg-accent-green/40"
+                          : "bg-border-default"
+                      )}
+                      aria-hidden
+                    />
+                  ) : null}
+                  <div className="flex w-[92px] shrink-0 flex-col items-center text-center sm:w-[104px]">
+                    <div
+                      className={cn(
+                        "flex size-9 shrink-0 items-center justify-center rounded-full border-2 font-mono text-xs font-bold",
+                        step.state === "complete" &&
+                          "border-accent-green/50 bg-accent-green/10 text-accent-green",
+                        step.state === "active" &&
+                          "border-syntax-param/50 bg-syntax-param/10 text-syntax-param",
+                        step.state === "pending" &&
+                          "border-border-default bg-bg-input text-text-muted"
                       )}
                     >
-                      <div
-                        className={cn(
-                          "absolute top-0.5 size-5 rounded-full bg-accent-red shadow-sm transition-transform",
-                          unsubscribeAll ? "left-[22px]" : "left-0.5"
-                        )}
-                      />
+                      {step.state === "complete" ? (
+                        "✓"
+                      ) : step.state === "active" ? (
+                        <Spinner />
+                      ) : (
+                        "·"
+                      )}
                     </div>
-                  </button>
-                  <div>
-                    <p className="font-mono text-sm font-medium text-accent-red">
-                      Unsubscribe from all
-                    </p>
-                    <p className="mt-1 text-sm leading-relaxed text-text-secondary">
-                      Stop all marketing and newsletter email from this sender.
-                      Transactional messages may still apply.
+                    <p
+                      className={cn(
+                        "mt-2 font-mono text-[0.6rem] font-medium leading-tight sm:text-[0.65rem]",
+                        step.state === "pending" ? "text-text-muted" : "text-text-primary"
+                      )}
+                    >
+                      {step.label}
                     </p>
                   </div>
-                </div>
-              </div>
+                </Fragment>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-              {saved && (
-                <p
-                  className="rounded-lg border border-accent-green/30 bg-accent-green-dim/50 px-4 py-3 text-sm text-accent-green"
-                  role="status"
-                >
-                  Your preferences have been updated
-                </p>
-              )}
+        <Card className="mb-8 border-border-default bg-bg-card">
+          <CardHeader>
+            <CardTitle className="text-syntax-builtin">Current step</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-mono text-sm leading-relaxed text-text-primary">
+              Extracting content from{" "}
+              <span className="text-syntax-string">soc2-report-2025.pdf</span>
+              <span className="text-text-secondary"> — Page 12 of 45</span>
+            </p>
+            <p className="mt-3 text-sm text-text-secondary">
+              Estimated time remaining:{" "}
+              <span className="font-mono text-syntax-param">~3 minutes</span>
+            </p>
+          </CardContent>
+        </Card>
 
-              <Button
-                type="button"
-                size="lg"
-                className="w-full"
-                onClick={handleSave}
+        <Card className="border-border-default bg-bg-card">
+          <CardHeader>
+            <CardTitle className="text-syntax-string">Uploaded files</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {fileRows.map((row) => (
+              <div
+                key={row.name}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-editor px-4 py-3"
               >
-                Save preferences
-              </Button>
-            </CardContent>
-          </Card>
+                <span className="font-mono text-xs text-text-primary">{row.name}</span>
+                {fileStatusBadge(row.status)}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
-          <p className="mt-10 text-center text-xs text-text-muted">
-            Powered by{" "}
-            <Link
-              href="/"
-              className="font-mono text-syntax-keyword underline decoration-border-default underline-offset-4 hover:text-syntax-param"
-            >
-              Trust Copilot
-            </Link>
-          </p>
-        </div>
-      </main>
+        <p className="mt-10 text-center text-xs text-text-muted">
+          Live updates reflect processing stages for this trust room upload batch.
+        </p>
+      </div>
     </div>
   );
 }

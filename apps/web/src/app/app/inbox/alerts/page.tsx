@@ -1,283 +1,365 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { AlertTriangle, Circle, Info } from "lucide-react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import { cn } from "@/lib/utils";
 
 type Severity = "critical" | "warning" | "info";
-type AlertType = "bounce" | "complaint" | "rate_limit" | "system";
+
+type DomainRow = {
+  domain: string;
+  status: "healthy" | "warning" | "paused";
+  bouncePct: number;
+  complaintPct: number;
+  dailySendUsed: number;
+  dailySendCap: number;
+  autoPause: "off" | "armed" | "active";
+};
 
 type AlertItem = {
   id: string;
   ts: string;
   severity: Severity;
-  type: AlertType;
-  title: string;
-  description: string;
+  message: string;
   entity: string;
-  entityKind: "account" | "domain";
-  action: "auto-paused" | "escalated" | "ignored";
   resolved: boolean;
 };
+
+const DOMAINS: DomainRow[] = [
+  {
+    domain: "outreach.trustcopilot.io",
+    status: "healthy",
+    bouncePct: 2.1,
+    complaintPct: 0.02,
+    dailySendUsed: 8400,
+    dailySendCap: 12000,
+    autoPause: "off",
+  },
+  {
+    domain: "replies.gtm.acme.com",
+    status: "warning",
+    bouncePct: 4.8,
+    complaintPct: 0.09,
+    dailySendUsed: 10800,
+    dailySendCap: 12000,
+    autoPause: "armed",
+  },
+  {
+    domain: "mail.seq.vendor.io",
+    status: "paused",
+    bouncePct: 6.4,
+    complaintPct: 0.14,
+    dailySendUsed: 3200,
+    dailySendCap: 8000,
+    autoPause: "active",
+  },
+  {
+    domain: "notify.hq.corp.net",
+    status: "healthy",
+    bouncePct: 1.2,
+    complaintPct: 0.03,
+    dailySendUsed: 4100,
+    dailySendCap: 10000,
+    autoPause: "off",
+  },
+];
 
 const MOCK_ALERTS: AlertItem[] = [
   {
     id: "1",
-    ts: "2025-03-25 14:02:11 UTC",
+    ts: "2025-03-25 14:02 UTC",
     severity: "critical",
-    type: "bounce",
-    title: "Bounce rate spike on sequences domain",
-    description: "Hard bounces exceeded 3× trailing 24h baseline for warmup cohort.",
-    entity: "mail.sequences.acme.com",
-    entityKind: "domain",
-    action: "auto-paused",
+    message: "Hard bounce rate on mail.seq.vendor.io crossed emergency threshold vs 24h baseline.",
+    entity: "mail.seq.vendor.io",
     resolved: false,
   },
   {
     id: "2",
-    ts: "2025-03-25 13:58:44 UTC",
+    ts: "2025-03-25 13:58 UTC",
     severity: "warning",
-    type: "complaint",
-    title: "Complaint ratio approaching threshold",
-    description: "FBL signals clustered on a single campaign template variant.",
-    entity: "acct_8f2k1m",
-    entityKind: "account",
-    action: "escalated",
+    message: "Complaint ratio climbing on template variant B — FBL cluster detected.",
+    entity: "replies.gtm.acme.com",
     resolved: false,
   },
   {
     id: "3",
-    ts: "2025-03-25 13:41:02 UTC",
+    ts: "2025-03-25 13:41 UTC",
     severity: "info",
-    type: "rate_limit",
-    title: "ESP throttle observed",
-    description: "Provider returned 429 on 2% of attempts; backoff engaged for 15 minutes.",
-    entity: "outreach.trustcopilot.io",
-    entityKind: "domain",
-    action: "ignored",
+    message: "Policy simulator: proposed cap would throttle 3% of sequence volume.",
+    entity: "acct_seq_global",
     resolved: true,
   },
   {
     id: "4",
-    ts: "2025-03-25 12:22:33 UTC",
+    ts: "2025-03-25 12:22 UTC",
     severity: "critical",
-    type: "system",
-    title: "Queue worker heartbeat missed",
-    description: "dispatch-worker-east did not emit heartbeat for 3 intervals.",
-    entity: "acct_ops_global",
-    entityKind: "account",
-    action: "escalated",
+    message: "Mailbox pool soft-bounce storm — auto-pause engaged for EU cohort.",
+    entity: "pool_outbound_03",
     resolved: false,
   },
   {
     id: "5",
-    ts: "2025-03-25 11:05:19 UTC",
+    ts: "2025-03-25 11:05 UTC",
     severity: "warning",
-    type: "bounce",
-    title: "Soft bounce cluster on mailbox pool",
-    description: "Temporary failures concentrated on mx fallback route.",
-    entity: "pool_outbound_03",
-    entityKind: "account",
-    action: "auto-paused",
+    message: "Bounce rate within 0.2pp of 5% policy line on warmup domain.",
+    entity: "replies.gtm.acme.com",
     resolved: false,
   },
   {
     id: "6",
-    ts: "2025-03-25 09:47:51 UTC",
+    ts: "2025-03-25 09:47 UTC",
     severity: "info",
-    type: "system",
-    title: "Policy simulator dry-run completed",
-    description: "No violations; 12 sequences would be capped under proposed limits.",
-    entity: "acct_8f2k1m",
-    entityKind: "account",
-    action: "ignored",
+    message: "Complaint webhook replay completed — no duplicate escalations.",
+    entity: "notify.hq.corp.net",
     resolved: true,
   },
   {
     id: "7",
-    ts: "2025-03-25 08:30:08 UTC",
+    ts: "2025-03-25 08:30 UTC",
     severity: "warning",
-    type: "rate_limit",
-    title: "Per-domain velocity near cap",
-    description: "seq.notify.company.co at 94% of rolling hourly limiter budget.",
-    entity: "seq.notify.company.co",
-    entityKind: "domain",
-    action: "ignored",
+    message: "Per-domain velocity at 94% of rolling hourly limiter budget.",
+    entity: "outreach.trustcopilot.io",
     resolved: true,
   },
   {
     id: "8",
-    ts: "2025-03-25 07:12:40 UTC",
+    ts: "2025-03-25 07:12 UTC",
     severity: "critical",
-    type: "complaint",
-    title: "Sudden complaint burst",
-    description: "Complaints per thousand sends crossed emergency threshold in EU region.",
-    entity: "replies.gtm.smtp.internal",
-    entityKind: "domain",
-    action: "auto-paused",
+    message: "Sudden complaint burst in EU — sequences paused pending review.",
+    entity: "replies.gtm.acme.com",
     resolved: false,
   },
 ];
 
-const SEVERITY_FILTERS = ["all", "critical", "warning", "info"] as const;
-const TYPE_FILTERS = ["all", "bounce", "complaint", "rate_limit", "system"] as const;
+const SEVERITY_FILTERS = ["All", "Critical", "Warning", "Info"] as const;
 
-function SeverityIcon({ severity }: { severity: Severity }) {
-  if (severity === "critical") {
-    return <Circle className="size-4 fill-accent-red text-accent-red" aria-hidden />;
-  }
-  if (severity === "warning") {
-    return <AlertTriangle className="size-4 text-accent-yellow" aria-hidden />;
-  }
-  return <Info className="size-4 text-syntax-builtin" aria-hidden />;
-}
-
-function typeLabel(t: AlertType) {
-  switch (t) {
-    case "bounce":
-      return "Bounce";
-    case "complaint":
-      return "Complaint";
-    case "rate_limit":
-      return "Rate limit";
-    case "system":
-      return "System";
+function domainStatusBadge(
+  s: DomainRow["status"]
+): ComponentProps<typeof Badge>["variant"] {
+  switch (s) {
+    case "healthy":
+      return "success";
+    case "warning":
+      return "p1";
+    case "paused":
+      return "p0";
     default:
-      return t;
+      return "default";
   }
 }
 
-export default function AlertFeedPage() {
-  const [severity, setSeverity] = useState<(typeof SEVERITY_FILTERS)[number]>("all");
-  const [type, setType] = useState<(typeof TYPE_FILTERS)[number]>("all");
+function autoPauseBadge(
+  a: DomainRow["autoPause"]
+): ComponentProps<typeof Badge>["variant"] {
+  switch (a) {
+    case "off":
+      return "success";
+    case "armed":
+      return "warning";
+    case "active":
+      return "p0";
+    default:
+      return "default";
+  }
+}
+
+function BounceBarWithThreshold({ value }: { value: number }) {
+  const barColor =
+    value >= 5
+      ? "var(--color-accent-red)"
+      : value >= 4
+        ? "var(--color-accent-yellow)"
+        : "var(--color-accent-green)";
+
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between font-mono text-[0.62rem] text-text-secondary">
+        <span>Bounce rate</span>
+        <span className="tabular-nums text-syntax-param">{value}%</span>
+      </div>
+      <div className="relative pt-0.5">
+        <div
+          className="pointer-events-none absolute left-[5%] top-0 bottom-0 w-px bg-accent-yellow z-10"
+          title="5% threshold"
+          aria-hidden
+        />
+        <ProgressBar value={Math.min(value, 15)} max={15} color={barColor} />
+        <div className="font-mono text-[0.55rem] text-text-muted mt-0.5">
+          threshold <span className="text-accent-yellow">5%</span> (shown on bar)
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SafetyAlertsPage() {
+  const [severity, setSeverity] =
+    useState<(typeof SEVERITY_FILTERS)[number]>("All");
 
   const visible = useMemo(() => {
     return MOCK_ALERTS.filter((a) => {
-      if (severity !== "all" && a.severity !== severity) return false;
-      if (type !== "all" && a.type !== type) return false;
+      if (severity === "All") return true;
+      if (severity === "Critical") return a.severity === "critical";
+      if (severity === "Warning") return a.severity === "warning";
+      if (severity === "Info") return a.severity === "info";
       return true;
     });
-  }, [severity, type]);
+  }, [severity]);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-mono text-lg font-bold text-text-primary">
-          <span className="text-syntax-builtin">def</span> alert_feed
+          <span className="text-syntax-builtin">def</span> safety_alerts
           <span className="text-text-muted">(</span>
           <span className="text-syntax-class">Monitor</span>
           <span className="text-text-muted">):</span>
         </h1>
         <p className="text-xs text-text-muted mt-1">
-          Live deliverability and system signals with escalation hooks
+          Complaints, bounces, and auto-pause signals across sending domains
         </p>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-border-default bg-bg-card p-4">
-        <div className="flex flex-col gap-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard label="Active alerts" value={5} accent="orange" />
+        <KpiCard label="Bounces (24h)" value={142} sub="hard + soft" accent="red" />
+        <KpiCard label="Complaints (24h)" value={18} accent="orange" />
+        <KpiCard label="Auto-paused domains" value={1} accent="purple" />
+      </div>
+
+      <Card className="border-border-default bg-bg-editor">
+        <CardContent className="py-4 space-y-3">
           <span className="font-mono text-[0.62rem] uppercase tracking-wider text-text-muted">
             Severity
           </span>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {SEVERITY_FILTERS.map((s) => (
               <Button
                 key={s}
                 type="button"
                 size="sm"
                 variant={severity === s ? "default" : "outline"}
-                className="capitalize"
                 onClick={() => setSeverity(s)}
               >
-                {s === "all" ? "All" : s}
+                {s}
               </Button>
             ))}
           </div>
-        </div>
-        <div className="flex flex-col gap-2 pt-1 border-t border-border-default">
-          <span className="font-mono text-[0.62rem] uppercase tracking-wider text-text-muted">
-            Type
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {TYPE_FILTERS.map((t) => (
-              <Button
-                key={t}
-                type="button"
-                size="sm"
-                variant={type === t ? "default" : "outline"}
-                className="font-mono normal-case"
-                onClick={() => setType(t)}
-              >
-                {t === "all" ? "All" : typeLabel(t as AlertType)}
-              </Button>
-            ))}
-          </div>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h2 className="font-mono text-sm font-bold text-text-primary mb-3">
+          Domain health
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {DOMAINS.map((d) => (
+            <Card
+              key={d.domain}
+              className="border-border-default bg-bg-card"
+            >
+              <CardHeader className="pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle className="text-sm font-mono text-syntax-function break-all">
+                    {d.domain}
+                  </CardTitle>
+                  <Badge variant={domainStatusBadge(d.status)} className="capitalize">
+                    {d.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <BounceBarWithThreshold value={d.bouncePct} />
+                <div>
+                  <div className="font-mono text-[0.62rem] uppercase tracking-wider text-text-muted mb-1">
+                    Complaint rate
+                  </div>
+                  <div className="font-mono text-sm font-semibold text-syntax-param tabular-nums">
+                    {d.complaintPct}%
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between font-mono text-[0.62rem] text-text-secondary">
+                    <span>Daily send usage</span>
+                    <span className="tabular-nums text-syntax-decorator">
+                      {d.dailySendUsed.toLocaleString()} /{" "}
+                      {d.dailySendCap.toLocaleString()}
+                    </span>
+                  </div>
+                  <ProgressBar
+                    value={d.dailySendUsed}
+                    max={d.dailySendCap}
+                    color="var(--color-syntax-builtin)"
+                    showLabel
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-default">
+                  <span className="font-mono text-[0.62rem] text-text-muted">
+                    Auto-pause
+                  </span>
+                  <Badge variant={autoPauseBadge(d.autoPause)} className="uppercase">
+                    {d.autoPause}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
 
-      <div className="space-y-3">
-        {visible.map((a) => (
-          <article
-            key={a.id}
-            className={cn(
-              "rounded-xl border border-border-default bg-bg-editor px-4 py-3.5 transition-colors hover:bg-bg-card-hover",
-              a.severity === "critical" && "border-l-4 border-l-accent-red",
-              a.severity === "warning" && "border-l-4 border-l-accent-yellow"
-            )}
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex gap-3 min-w-0">
-                <div className="mt-0.5 shrink-0" title={a.severity}>
-                  <SeverityIcon severity={a.severity} />
-                </div>
-                <div className="min-w-0 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-[0.65rem] text-syntax-builtin">{a.ts}</span>
-                    <Badge
-                      variant={a.severity === "critical" ? "p0" : a.severity === "warning" ? "p1" : "info"}
-                      className="capitalize"
-                    >
-                      {a.severity}
-                    </Badge>
-                    <Badge variant="default" className="normal-case">
-                      {typeLabel(a.type)}
-                    </Badge>
-                    {a.resolved && (
-                      <Badge variant="success" className="normal-case">
-                        Resolved
-                      </Badge>
-                    )}
-                  </div>
-                  <h2 className="font-mono text-sm font-semibold text-text-primary">{a.title}</h2>
-                  <p className="text-xs text-text-secondary leading-relaxed">{a.description}</p>
-                  <p className="font-mono text-xs text-text-muted">
-                    <span className="text-syntax-keyword">affected</span>
-                    <span className="text-text-muted">(</span>
-                    <span className="text-syntax-string">{a.entityKind}</span>
-                    <span className="text-text-muted">=</span>
-                    <span className="text-syntax-param">{a.entity}</span>
-                    <span className="text-text-muted">)</span>
-                  </p>
-                  <p className="font-mono text-xs">
-                    <span className="text-syntax-decorator">@action</span>{" "}
-                    <span className="text-syntax-function">{a.action}</span>
-                  </p>
-                </div>
-              </div>
-              {!a.resolved && (
-                <div className="flex shrink-0 gap-2 sm:flex-col sm:items-stretch">
-                  <Button variant="outline" size="sm">
-                    Acknowledge
-                  </Button>
-                  <Button variant="destructive" size="sm">
-                    Escalate
-                  </Button>
-                </div>
+      <div>
+        <h2 className="font-mono text-sm font-bold text-text-primary mb-3">
+          Alert feed
+        </h2>
+        <div className="space-y-3">
+          {visible.map((a) => (
+            <article
+              key={a.id}
+              className={cn(
+                "rounded-xl border border-border-default bg-bg-editor px-4 py-3.5 transition-colors hover:bg-bg-card-hover",
+                a.severity === "critical" && "border-l-4 border-l-accent-red",
+                a.severity === "warning" && "border-l-4 border-l-accent-yellow"
               )}
-            </div>
-          </article>
-        ))}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[0.65rem] text-syntax-decorator">
+                  {a.ts}
+                </span>
+                <Badge
+                  variant={
+                    a.severity === "critical"
+                      ? "p0"
+                      : a.severity === "warning"
+                        ? "p1"
+                        : "info"
+                  }
+                  className="capitalize"
+                >
+                  {a.severity}
+                </Badge>
+                <Badge
+                  variant={a.resolved ? "success" : "warning"}
+                  className="normal-case"
+                >
+                  {a.resolved ? "Resolved" : "Open"}
+                </Badge>
+              </div>
+              <p className="text-sm text-text-secondary mt-2 leading-relaxed">
+                {a.message}
+              </p>
+              <p className="font-mono text-xs text-text-muted mt-2">
+                <span className="text-syntax-keyword">entity</span>
+                <span className="text-text-muted">(</span>
+                <span className="text-syntax-string">{a.entity}</span>
+                <span className="text-text-muted">)</span>
+              </p>
+            </article>
+          ))}
+        </div>
       </div>
     </div>
   );

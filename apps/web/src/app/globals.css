@@ -1,0 +1,78 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+
+@theme {
+  --color-bg-root: #0e0e10;
+  --color-bg-editor: #1a1a2e;
+  --color-bg-sidebar: #12121a;
+  --color-bg-card: #1e1e30;
+  --color-bg-card-hover: #252540;
+  --color-bg-input: #16162a;
+
+  --color-border-default: #2a2a40;
+  --color-border-active: #3d3d5c;
+
+  --color-text-primary: #d4d4e8;
+  --color-text-secondary: #8888aa;
+  --color-text-muted: #555570;
+
+  --color-syntax-keyword: #c586c0;
+  --color-syntax-function: #dcdcaa;
+  --color-syntax-string: #6a9955;
+  --color-syntax-number: #b5cea8;
+  --color-syntax-class: #4ec9b0;
+  --color-syntax-param: #9cdcfe;
+  --color-syntax-builtin: #569cd6;
+  --color-syntax-decorator: #d7ba7d;
+  --color-syntax-operator: #ce9178;
+
+  --color-accent-blue: #264f78;
+  --color-accent-blue-bright: #007acc;
+  --color-accent-green: #2ea043;
+  --color-accent-green-dim: #1a3a2a;
+  --color-accent-yellow: #d29922;
+  --color-accent-red: #f85149;
+  --color-accent-orange: #e3873a;
+
+  --color-glow-blue: rgba(0, 122, 204, 0.15);
+
+  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-default) transparent;
+}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-default); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-active); }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg-root);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 122, 204, 0.3); }
+  50% { box-shadow: 0 0 8px 2px rgba(0, 122, 204, 0.15); }
+}

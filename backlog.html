@@ -83,6 +83,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-root);colo
 .filter-btn{font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:5px 14px;background:var(--bg-input);color:var(--text-secondary);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all var(--transition)}
 .filter-btn:hover{background:var(--bg-card);border-color:var(--border-active);color:var(--text-primary)}
 .filter-btn.active{background:var(--accent-blue);border-color:var(--accent-blue-bright);color:#fff}
+.filter-divider{width:1px;height:20px;background:var(--border);margin:0 4px}
 .search-input{font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:5px 12px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border);border-radius:var(--radius);outline:none;transition:border-color var(--transition);margin-left:auto;width:220px}
 .search-input::placeholder{color:var(--text-muted)}
 .search-input:focus{border-color:var(--accent-blue-bright)}
@@ -116,6 +117,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-root);colo
 .increment[data-color="decorator"] .increment-num{background:rgba(215,186,125,.15);color:var(--py-decorator)}
 .increment[data-color="number"] .increment-num{background:rgba(181,206,168,.15);color:var(--py-number)}
 .increment-title{flex:1;font-size:.85rem;font-weight:600}
+.increment-layer{font-family:'JetBrains Mono',monospace;font-size:.55rem;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0}
+.increment-layer.be{background:rgba(78,201,176,.1);color:var(--py-class)}
+.increment-layer.fe{background:rgba(156,220,254,.1);color:var(--py-param)}
 .increment-meta{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .increment-count{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--text-muted)}
 .increment-progress-bar{width:90px;height:4px;background:var(--bg-input);border-radius:2px;overflow:hidden}
@@ -158,6 +162,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-root);colo
 .badge-p1{background:rgba(210,153,34,.12);color:var(--accent-yellow)}
 .badge-est{background:rgba(156,220,254,.1);color:var(--py-param)}
 .badge-new{background:rgba(78,201,176,.12);color:var(--py-class)}
+.badge-route{background:rgba(106,153,85,.12);color:var(--py-string)}
 .ticket-deps{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text-muted);margin-top:3px}
 .ticket-deps span{color:var(--py-keyword)}
 
@@ -214,7 +219,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-root);colo
     <div class="global-progress-bar"><div class="global-progress-fill" id="globalFill" style="width:0%"></div></div>
     <div class="global-stats">
       <div class="stat-box"><div class="stat-value" id="statDone">0</div><div class="stat-label">Done</div></div>
-      <div class="stat-box"><div class="stat-value" id="statTotal">69</div><div class="stat-label">Total</div></div>
+      <div class="stat-box"><div class="stat-value" id="statTotal">134</div><div class="stat-label">Total</div></div>
       <div class="stat-box"><div class="stat-value" id="statPts">0</div><div class="stat-label">Pts Done</div></div>
     </div>
   </div>
@@ -251,6 +256,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-root);colo
       <button class="filter-btn" onclick="setFilter('done',this)">Done</button>
       <button class="filter-btn" onclick="setFilter('p0',this)">P0</button>
       <button class="filter-btn" onclick="setFilter('p1',this)">P1</button>
+      <div class="filter-divider"></div>
+      <button class="filter-btn" onclick="setFilter('backend',this)">Backend</button>
+      <button class="filter-btn" onclick="setFilter('frontend',this)">Frontend</button>
       <input type="text" class="search-input" placeholder="Search tickets..." id="searchInput" oninput="applyFilters()">
     </div>
     <div id="content"></div>
@@ -264,11 +272,15 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-root);colo
         <div class="diagram-card-body" id="diagramStateMachine"></div>
       </div>
       <div class="diagram-card">
-        <div class="diagram-card-header"><div class="dot" style="background:var(--py-builtin)"></div><h3>Architecture — Three-Lane System</h3></div>
+        <div class="diagram-card-header"><div class="dot" style="background:var(--py-builtin)"></div><h3>Architecture — Full-Stack System</h3></div>
         <div class="diagram-card-body" id="diagramArchitecture"></div>
       </div>
       <div class="diagram-card">
-        <div class="diagram-card-header"><div class="dot" style="background:var(--py-keyword)"></div><h3>Dependency Graph — Critical Path</h3></div>
+        <div class="diagram-card-header"><div class="dot" style="background:var(--py-param)"></div><h3>Frontend — Route Map & Component Tree</h3></div>
+        <div class="diagram-card-body" id="diagramFrontend"></div>
+      </div>
+      <div class="diagram-card">
+        <div class="diagram-card-header"><div class="dot" style="background:var(--py-keyword)"></div><h3>Dependency Graph — Backend + Frontend</h3></div>
         <div class="diagram-card-body" id="diagramDeps"></div>
       </div>
     </div>
@@ -278,10 +290,11 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-root);colo
   <div class="tab-panel" id="panel-charts">
     <div class="chart-grid">
       <div class="chart-card"><div class="chart-card-header"><h3>Overall Completion</h3><p>Donut chart of done vs remaining</p></div><div class="chart-card-body"><canvas id="chartDonut" width="260" height="260"></canvas></div></div>
-      <div class="chart-card"><div class="chart-card-header"><h3>Increment Progress</h3><p>Per-increment completion rate</p></div><div class="chart-card-body"><canvas id="chartBars" width="420" height="260"></canvas></div></div>
-      <div class="chart-card"><div class="chart-card-header"><h3>Points by Priority</h3><p>P0 vs P1 effort distribution</p></div><div class="chart-card-body"><canvas id="chartPriority" width="420" height="260"></canvas></div></div>
-      <div class="chart-card"><div class="chart-card-header"><h3>Effort by Lane</h3><p>Points grouped by system lane</p></div><div class="chart-card-body"><canvas id="chartLanes" width="420" height="260"></canvas></div></div>
-      <div class="chart-card full"><div class="chart-card-header"><h3>Burndown Projection</h3><p>Points remaining at configurable velocity</p></div><div class="chart-card-body"><canvas id="chartBurndown" width="800" height="280"></canvas></div></div>
+      <div class="chart-card"><div class="chart-card-header"><h3>Backend vs Frontend</h3><p>Layer split — progress and points</p></div><div class="chart-card-body"><canvas id="chartLayerSplit" width="380" height="260"></canvas></div></div>
+      <div class="chart-card full"><div class="chart-card-header"><h3>Increment Progress</h3><p>Per-increment completion rate (18 increments)</p></div><div class="chart-card-body"><canvas id="chartBars" width="900" height="280"></canvas></div></div>
+      <div class="chart-card"><div class="chart-card-header"><h3>Points by Priority</h3><p>P0 vs P1 effort distribution</p></div><div class="chart-card-body"><canvas id="chartPriority" width="900" height="260"></canvas></div></div>
+      <div class="chart-card"><div class="chart-card-header"><h3>Effort by Lane</h3><p>Points grouped by system lane</p></div><div class="chart-card-body"><canvas id="chartLanes" width="420" height="360"></canvas></div></div>
+      <div class="chart-card full"><div class="chart-card-header"><h3>Burndown Projection</h3><p>Points remaining at configurable velocity</p></div><div class="chart-card-body"><canvas id="chartBurndown" width="900" height="280"></canvas></div></div>
     </div>
   </div>
 
@@ -293,8 +306,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg-root);colo
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════════════
+// ── DATA: 18 INCREMENTS (9 Backend + 9 Frontend) ──
+// ══════════════════════════════════════════════════════════════
 const INCREMENTS=[
-{num:1,title:"Foundation & data model",color:"blue",tickets:[
+// ─── BACKEND (Increments 1-9) ───
+{num:1,title:"Foundation & data model",color:"blue",layer:"backend",tickets:[
 {id:"ARC-001",title:"Split discovery lane from contact lane",p:"P0",est:3,deps:"—"},
 {id:"PLAT-002",title:"Scaffold repo shape and shared contracts",p:"P0",est:5,deps:"ARC-001"},
 {id:"DATA-003",title:"Core schema and deal state machine",p:"P0",est:8,deps:"PLAT-002"},
@@ -305,7 +322,7 @@ const INCREMENTS=[
 {id:"SIE-004",title:"Decision-trace schema and replay hooks",p:"P0",est:5,deps:"OPS-004, SIE-001, SIE-003"},
 {id:"SIE-005",title:"Event topics and worker contracts",p:"P0",est:3,deps:"SIE-002"},
 {id:"CFG-005",title:"Environment validation, secrets, feature flags",p:"P1",est:3,deps:"PLAT-002"}]},
-{num:2,title:"Signal acquisition",color:"purple",tickets:[
+{num:2,title:"Signal acquisition",color:"purple",layer:"backend",tickets:[
 {id:"SIE-101",title:"Source registry and crawl scheduler",p:"P0",est:5,deps:"SIE-001, SIE-005, ARC-001"},
 {id:"SIE-102",title:"Robots-aware HTML fetcher",p:"P0",est:3,deps:"SIE-101"},
 {id:"SIE-103",title:"Playwright renderer for JS-heavy pages",p:"P0",est:5,deps:"SIE-101",tech:"Playwright"},
@@ -314,28 +331,28 @@ const INCREMENTS=[
 {id:"SIE-106",title:"RSS and news/press ingest adapters",p:"P0",est:3,deps:"SIE-101"},
 {id:"SIE-107",title:"Page-type classifier",p:"P0",est:3,deps:"SIE-104"},
 {id:"SIE-108",title:"Freshness, dedupe, and crawl-budget controls",p:"P0",est:3,deps:"SIE-101, SIE-102, SIE-106"}]},
-{num:3,title:"Signal normalization & fusion",color:"green",tickets:[
+{num:3,title:"Signal normalization & fusion",color:"green",layer:"backend",tickets:[
 {id:"SIE-201",title:"Extract atomic signal events from text",p:"P0",est:5,deps:"SIE-104, SIE-105, SIE-106, SIE-107"},
 {id:"SIE-202",title:"Trigger taxonomy and scoring rules",p:"P0",est:3,deps:"SIE-201"},
 {id:"SIE-203",title:"Account-level signal fusion worker",p:"P0",est:5,deps:"SIE-201, SIE-202, SIE-003"},
 {id:"SIE-204",title:"Account narrative summary",p:"P0",est:3,deps:"SIE-203"},
 {id:"SIE-205",title:"Temporal decay and why-now freshness scoring",p:"P0",est:3,deps:"SIE-202, SIE-203"},
 {id:"SIE-206",title:"Negative-signal detector",p:"P0",est:3,deps:"SIE-201, SIE-202"}]},
-{num:4,title:"Pain, ICP & value reasoning",color:"teal",tickets:[
+{num:4,title:"Pain, ICP & value reasoning",color:"teal",layer:"backend",tickets:[
 {id:"SIE-301",title:"Firmographic estimator",p:"P0",est:5,deps:"SIE-203"},
 {id:"SIE-302",title:"Infer likely pain types",p:"P0",est:3,deps:"SIE-203, SIE-301"},
 {id:"SIE-303",title:"Score ICP fit",p:"P0",est:3,deps:"SIE-301, SIE-302"},
 {id:"SIE-304",title:"Estimate urgency and monetization probability",p:"P0",est:3,deps:"SIE-302, SIE-303, SIE-205"},
 {id:"SIE-305",title:"Estimate deal tier and expected value",p:"P0",est:3,deps:"SIE-301, SIE-304"},
 {id:"SIE-306",title:"Micro-segmentation",p:"P0",est:3,deps:"SIE-302, SIE-303, SIE-305"}]},
-{num:5,title:"Buyer & contact reasoning",color:"gold",tickets:[
+{num:5,title:"Buyer & contact reasoning",color:"gold",layer:"backend",tickets:[
 {id:"SIE-401",title:"Public-site buyer resolver",p:"P0",est:5,deps:"SIE-107, SIE-301"},
 {id:"SIE-402",title:"Role-to-pain buyer psychology map",p:"P0",est:3,deps:"SIE-302, SIE-401"},
 {id:"SIE-403",title:"Contact confidence and fallback chain",p:"P0",est:3,deps:"SIE-401, SIE-402"},
 {id:"SIE-404",title:"Competitor presence detection",p:"P0",est:3,deps:"SIE-201, SIE-203"},
 {id:"SIE-405",title:"Contact decision engine",p:"P0",est:5,deps:"SIE-304, SIE-305, SIE-403, SIE-404"},
 {id:"SIE-406",title:"Account memory and re-contact logic",p:"P0",est:3,deps:"SIE-405"}]},
-{num:6,title:"Message strategy & outreach",color:"orange",tickets:[
+{num:6,title:"Message strategy & outreach",color:"orange",layer:"backend",tickets:[
 {id:"SIE-501",title:"Structured message-strategy object",p:"P0",est:3,deps:"SIE-302, SIE-306, SIE-405"},
 {id:"SIE-502",title:"Objection prediction",p:"P0",est:3,deps:"SIE-501, SIE-406"},
 {id:"SIE-503",title:"CTA chooser",p:"P0",est:3,deps:"SIE-501, SIE-502"},
@@ -348,7 +365,7 @@ const INCREMENTS=[
 {id:"INBOX-206",title:"Ingest inbound mail and assemble account threads",p:"P0",est:5,deps:"MAIL-205"},
 {id:"REPLY-207",title:"Reply classifier and next-action planner",p:"P0",est:8,deps:"INBOX-206, SIE-204"},
 {id:"SAFE-208",title:"Kill switches, complaint thresholds, auto pauses",p:"P0",est:5,deps:"MAIL-205, REPLY-207"}]},
-{num:7,title:"Proof, payment & onboarding",color:"param",tickets:[
+{num:7,title:"Proof, payment & onboarding",color:"param",layer:"backend",tickets:[
 {id:"INTAKE-301",title:"Secure intake room with tokenized upload links",p:"P0",est:8,deps:"REPLY-207"},
 {id:"FUL-302",title:"Trust Copilot fulfillment bridge and job runner",p:"P0",est:8,deps:"INTAKE-301"},
 {id:"FUL-303",title:"Proof pack, gap report, proof-delivery email",p:"P0",est:5,deps:"FUL-302"},
@@ -356,14 +373,14 @@ const INCREMENTS=[
 {id:"BILL-305",title:"Stripe checkout and webhook-driven state changes",p:"P0",est:5,deps:"OFFER-304, OPS-004"},
 {id:"ONBD-306",title:"Provision workspace and send onboarding",p:"P0",est:5,deps:"BILL-305"},
 {id:"RET-307",title:"Retention agent for docs and recurring usage",p:"P1",est:5,deps:"ONBD-306"}]},
-{num:8,title:"Learning & evaluation",color:"decorator",tickets:[
+{num:8,title:"Learning & evaluation",color:"decorator",layer:"backend",tickets:[
 {id:"SIE-601",title:"Capture lead-quality outcomes",p:"P0",est:3,deps:"SIE-405, SIE-406"},
 {id:"SIE-602",title:"Decision labeling pipeline",p:"P0",est:3,deps:"SIE-601, SIE-004"},
 {id:"SIE-603",title:"Train ranking model v1",p:"P1",est:5,deps:"SIE-602",tech:"LightGBM"},
 {id:"SIE-604",title:"Offline evaluation suite",p:"P0",est:3,deps:"SIE-603"},
 {id:"SIE-605",title:"Shadow scoring in production",p:"P1",est:3,deps:"SIE-603, SIE-604"},
 {id:"SIE-606",title:"Model rollback and safe fallback",p:"P1",est:3,deps:"SIE-605",tech:"MLflow"}]},
-{num:9,title:"Scale, ops & quality",color:"number",tickets:[
+{num:9,title:"Scale, ops & quality",color:"number",layer:"backend",tickets:[
 {id:"SIE-701",title:"Source health dashboard",p:"P0",est:3,deps:"SIE-101, SIE-108"},
 {id:"SIE-702",title:"Account conflict detector",p:"P0",est:3,deps:"SIE-405, SIE-406"},
 {id:"SIE-703",title:"Large-scale raw event store",p:"P1",est:5,deps:"SIE-101, SIE-108, SIE-601",tech:"ClickHouse"},
@@ -371,10 +388,87 @@ const INCREMENTS=[
 {id:"SCALE-403",title:"Embeddings and account memory index",p:"P1",est:5,deps:"SIE-204"},
 {id:"EVAL-405",title:"Message guardrails and contradiction detection",p:"P0",est:5,deps:"MSG-203, SIE-604"},
 {id:"OBS-406",title:"Deliverability, policy, and conversion dashboards",p:"P1",est:5,deps:"SAFE-208, BILL-305"},
-{id:"OPS-407",title:"Incident runbooks, replay tools, backfills",p:"P1",est:3,deps:"OPS-004, SIE-704, OBS-406"}]}
+{id:"OPS-407",title:"Incident runbooks, replay tools, backfills",p:"P1",est:3,deps:"OPS-004, SIE-704, OBS-406"}]},
+
+// ─── FRONTEND (Increments 10-18) ───
+{num:10,title:"FE foundation & app shell",color:"blue",layer:"frontend",tickets:[
+{id:"FE-001",title:"Create app route map and shell",p:"P0",est:3,deps:"—",tech:"Tailwind, shadcn/ui",route:"/app/*"},
+{id:"FE-002",title:"Design tokens and component primitives",p:"P0",est:3,deps:"FE-001",tech:"shadcn/ui",route:"libs/ui"},
+{id:"FE-003",title:"Typed frontend API client",p:"P0",est:3,deps:"FE-001",tech:"TanStack Query",route:"libs/api-client"},
+{id:"FE-004",title:"Form and validation system",p:"P0",est:2,deps:"FE-002, FE-003",tech:"React Hook Form, Zod",route:"libs/forms"},
+{id:"FE-005",title:"Table, filter, and saved-view framework",p:"P0",est:3,deps:"FE-002, FE-003",tech:"TanStack Table",route:"libs/tables"},
+{id:"FE-006",title:"Global activity feed and audit drawer",p:"P0",est:2,deps:"FE-003",route:"global drawer"},
+{id:"FE-007",title:"Loading, empty, and error state library",p:"P0",est:2,deps:"FE-002",route:"libs/ui/states"},
+{id:"FE-008",title:"Feature-flag and environment badges",p:"P1",est:2,deps:"FE-001",route:"global shell"}]},
+{num:11,title:"Discovery & source operations UI",color:"purple",layer:"frontend",tickets:[
+{id:"FE-101",title:"Discovery dashboard",p:"P0",est:3,deps:"FE-001, FE-003",tech:"ECharts",route:"/app/discovery"},
+{id:"FE-102",title:"Source registry management screen",p:"P0",est:3,deps:"FE-004, FE-005",route:"/app/discovery/sources"},
+{id:"FE-103",title:"Crawl job run details page",p:"P0",est:3,deps:"FE-003, FE-005",route:"/app/discovery/runs/[runId]"},
+{id:"FE-104",title:"Raw page viewer and extraction preview",p:"P0",est:4,deps:"FE-002, FE-003",route:"/app/discovery/pages/[pageId]"},
+{id:"FE-105",title:"Signal explorer list",p:"P0",est:3,deps:"FE-005",route:"/app/discovery/signals"},
+{id:"FE-106",title:"Source health dashboard",p:"P0",est:2,deps:"FE-101, FE-102",tech:"ECharts",route:"/app/discovery/source-health"},
+{id:"FE-107",title:"Discovery budget and throughput controls UI",p:"P1",est:3,deps:"FE-101, FE-102",route:"/app/discovery/budgets"}]},
+{num:12,title:"Account workspace & decision UI",color:"green",layer:"frontend",tickets:[
+{id:"FE-201",title:"Account pipeline list",p:"P0",est:4,deps:"FE-005",route:"/app/accounts"},
+{id:"FE-202",title:"Account overview workspace",p:"P0",est:3,deps:"FE-001, FE-201",route:"/app/accounts/[accountId]"},
+{id:"FE-203",title:"Research brief panel",p:"P0",est:3,deps:"FE-202",route:"account overview tab"},
+{id:"FE-204",title:"Signal timeline view",p:"P0",est:3,deps:"FE-202",tech:"ECharts",route:"account signals tab"},
+{id:"FE-205",title:"Feature snapshot inspector",p:"P0",est:3,deps:"FE-202",route:"account features tab"},
+{id:"FE-206",title:"Decision trace and replay panel",p:"P0",est:4,deps:"FE-202, FE-205",route:"account decision tab"},
+{id:"FE-207",title:"Negative-signal and competitor widgets",p:"P0",est:2,deps:"FE-202",route:"account overview tab"}]},
+{num:13,title:"Buyer, contact & messaging UI",color:"teal",layer:"frontend",tickets:[
+{id:"FE-301",title:"Buyer resolver panel",p:"P0",est:3,deps:"FE-202",route:"account buyers tab"},
+{id:"FE-302",title:"Pain, ICP, urgency, and value scorecards",p:"P0",est:3,deps:"FE-202, FE-205",route:"account overview tab"},
+{id:"FE-303",title:"Contact decision panel",p:"P0",est:3,deps:"FE-202, FE-206",route:"account contact tab"},
+{id:"FE-304",title:"Message strategy view",p:"P0",est:3,deps:"FE-202",route:"account messaging tab"},
+{id:"FE-305",title:"Objection and proof-angle preview",p:"P0",est:2,deps:"FE-304",route:"account messaging tab"},
+{id:"FE-306",title:"Grounded message preview and schema inspector",p:"P0",est:4,deps:"FE-304",route:"account messaging tab"},
+{id:"FE-307",title:"CTA and offer-path preview",p:"P0",est:2,deps:"FE-304",route:"account messaging tab"},
+{id:"FE-308",title:"Manual override and force-state controls",p:"P1",est:3,deps:"FE-202, FE-303",route:"account controls"}]},
+{num:14,title:"Sender domain & compliance UI",color:"gold",layer:"frontend",tickets:[
+{id:"FE-401",title:"Sender-domain recommendation wizard",p:"P0",est:3,deps:"FE-004, FE-008",route:"/app/settings/sending-domains"},
+{id:"FE-402",title:"Domain authentication status screen",p:"P0",est:4,deps:"FE-401, FE-003",route:"/app/settings/sending-domains/[domainId]"},
+{id:"FE-403",title:"DNS copy-and-verify panel",p:"P0",est:2,deps:"FE-402",route:"domain health screen"},
+{id:"FE-404",title:"Mailbox inventory and routing screen",p:"P0",est:3,deps:"FE-401",route:"/app/settings/mailboxes"},
+{id:"FE-405",title:"Send-budget calendar and allocator UI",p:"P0",est:3,deps:"FE-404",tech:"ECharts",route:"/app/outreach/budgets"},
+{id:"FE-406",title:"Legal footer, unsubscribe, and address settings",p:"P0",est:3,deps:"FE-004",route:"/app/settings/compliance"},
+{id:"FE-407",title:"Suppression, allowlist, denylist UI",p:"P0",est:3,deps:"FE-005",route:"/app/settings/suppression"},
+{id:"FE-408",title:"Policy simulator and rule tester",p:"P0",est:4,deps:"FE-406, FE-407",route:"/app/settings/policy-simulator"}]},
+{num:15,title:"Inbox, replies & action queue UI",color:"orange",layer:"frontend",tickets:[
+{id:"FE-501",title:"Unified inbox list and thread view",p:"P0",est:4,deps:"FE-005, FE-202",route:"/app/inbox"},
+{id:"FE-502",title:"Reply classification timeline",p:"P0",est:3,deps:"FE-501",route:"thread detail"},
+{id:"FE-503",title:"Next-action queues by reply type",p:"P0",est:3,deps:"FE-501, FE-502",route:"/app/inbox/queues"},
+{id:"FE-504",title:"Snooze, referral, and suppression action panels",p:"P0",est:2,deps:"FE-502",route:"thread detail"},
+{id:"FE-505",title:"Complaint, bounce, and pause alert center",p:"P0",est:3,deps:"FE-405",route:"/app/inbox/alerts"},
+{id:"FE-506",title:"CTA engagement monitor",p:"P1",est:2,deps:"FE-501",route:"/app/inbox/engagement"}]},
+{num:16,title:"Customer trust room & proof UI",color:"param",layer:"frontend",tickets:[
+{id:"FE-601",title:"Public trust-room landing page",p:"P0",est:4,deps:"FE-002, FE-007",route:"/r/[token]"},
+{id:"FE-602",title:"Secure upload widget and file queue UI",p:"P0",est:4,deps:"FE-601",tech:"react-dropzone",route:"/r/[token]"},
+{id:"FE-603",title:"Processing-status page with live updates",p:"P0",est:3,deps:"FE-602",route:"/r/[token]/status"},
+{id:"FE-604",title:"Proof pack viewer",p:"P0",est:4,deps:"FE-603",route:"/proof/[token]"},
+{id:"FE-605",title:"Gap report and coverage summary UI",p:"P0",est:3,deps:"FE-604",tech:"ECharts",route:"/proof/[token]"},
+{id:"FE-606",title:"NDA gate and access-request flow",p:"P1",est:2,deps:"FE-601",route:"/r/[token]"},
+{id:"FE-607",title:"Proof-delivery email landing variant",p:"P1",est:2,deps:"FE-604",route:"/proof/[token]/summary"}]},
+{num:17,title:"Offer, checkout & workspace UI",color:"decorator",layer:"frontend",tickets:[
+{id:"FE-701",title:"Fixed-offer page",p:"P0",est:3,deps:"FE-002",route:"/offer/[offerId]"},
+{id:"FE-702",title:"Checkout handoff and payment-status page",p:"P0",est:3,deps:"FE-701",route:"/checkout/[offerId]"},
+{id:"FE-703",title:"Post-payment onboarding wizard",p:"P0",est:4,deps:"FE-702",route:"/app/onboarding"},
+{id:"FE-704",title:"Workspace home and questionnaire queue",p:"P0",est:4,deps:"FE-703",route:"/workspace"},
+{id:"FE-705",title:"Evidence vault UI",p:"P0",est:3,deps:"FE-704",route:"/workspace/docs"},
+{id:"FE-706",title:"Retention nudges and expiring-doc center",p:"P1",est:3,deps:"FE-705",route:"/workspace/health"}]},
+{num:18,title:"Learning, analytics & ops UI",color:"number",layer:"frontend",tickets:[
+{id:"FE-801",title:"Lead-outcome labeling console",p:"P0",est:3,deps:"FE-005, FE-202",route:"/app/learning/labels"},
+{id:"FE-802",title:"Ranking and cohort evaluation dashboard",p:"P0",est:4,deps:"FE-801",tech:"ECharts",route:"/app/learning/evals"},
+{id:"FE-803",title:"Shadow-scoring compare UI",p:"P1",est:3,deps:"FE-802",route:"/app/learning/shadow"},
+{id:"FE-804",title:"Deliverability dashboard",p:"P0",est:4,deps:"FE-405, FE-505",tech:"ECharts",route:"/app/analytics/deliverability"},
+{id:"FE-805",title:"Revenue funnel dashboard",p:"P0",est:4,deps:"FE-201, FE-702",tech:"ECharts",route:"/app/analytics/revenue"},
+{id:"FE-806",title:"Incident, replay, and backfill console",p:"P0",est:4,deps:"FE-006, FE-206",route:"/app/ops"},
+{id:"FE-807",title:"Change log for policies, prompts, and models",p:"P1",est:2,deps:"FE-806",route:"/app/ops/changes"},
+{id:"FE-808",title:"Runbook viewer and incident checklist UI",p:"P1",est:2,deps:"FE-806",route:"/app/ops/runbooks"}]}
 ];
+
 const COLORS={blue:"#569cd6",purple:"#c586c0",green:"#6a9955",teal:"#4ec9b0",gold:"#dcdcaa",orange:"#ce9178",param:"#9cdcfe",decorator:"#d7ba7d",number:"#b5cea8"};
-const STORAGE_KEY="tcp-backlog-v3";
+const STORAGE_KEY="tcp-backlog-v4";
 let checked={},currentFilter="all";
 function loadState(){try{checked=JSON.parse(localStorage.getItem(STORAGE_KEY))||{}}catch(e){checked={}}}
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(checked))}
@@ -395,7 +489,13 @@ function render(){
   const nav=document.getElementById("navList");
   const content=document.getElementById("content");
   nav.innerHTML="";content.innerHTML="";
+  let lastLayer="";
   INCREMENTS.forEach(inc=>{
+    if(inc.layer!==lastLayer){
+      const sep=document.createElement("div");sep.className="nav-sep";
+      sep.textContent=inc.layer==="backend"?"Backend":"Frontend";
+      nav.appendChild(sep);lastLayer=inc.layer;
+    }
     const done=inc.tickets.filter(t=>checked[t.id]).length;
     const total=inc.tickets.length;
     const pct=total?Math.round(done/total*100):0;
@@ -406,15 +506,17 @@ function render(){
     ni.onclick=()=>{switchTab('backlog',document.querySelector('.tab-btn'));const el=document.getElementById("inc-"+inc.num);if(el){el.classList.add("open");el.scrollIntoView({behavior:"smooth",block:"start"});document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));ni.classList.add("active")}};
     nav.appendChild(ni);
     const sec=document.createElement("div");
-    sec.className="increment open";sec.id="inc-"+inc.num;sec.dataset.color=inc.color;
+    sec.className="increment open";sec.id="inc-"+inc.num;sec.dataset.color=inc.color;sec.dataset.layer=inc.layer;
     if(isComplete)sec.classList.add("complete");
-    sec.innerHTML=`<div class="increment-header" onclick="toggleIncrement(this)"><span class="increment-chevron">&#9654;</span><span class="increment-num">${inc.num}</span><span class="increment-title">${inc.title}</span><div class="increment-meta"><span class="increment-count">${done}/${total}</span><div class="increment-progress-bar"><div class="increment-progress-fill" style="width:${pct}%"></div></div><span class="increment-pct" style="color:${pct===100?'var(--accent-green)':'var(--text-secondary)'}">${pct}%</span></div></div><div class="increment-body"><div class="ticket-list" id="tickets-${inc.num}"></div></div>`;
+    const layerBadge=`<span class="increment-layer ${inc.layer==='backend'?'be':'fe'}">${inc.layer==='backend'?'BE':'FE'}</span>`;
+    sec.innerHTML=`<div class="increment-header" onclick="toggleIncrement(this)"><span class="increment-chevron">&#9654;</span><span class="increment-num">${inc.num}</span><span class="increment-title">${inc.title}</span>${layerBadge}<div class="increment-meta"><span class="increment-count">${done}/${total}</span><div class="increment-progress-bar"><div class="increment-progress-fill" style="width:${pct}%"></div></div><span class="increment-pct" style="color:${pct===100?'var(--accent-green)':'var(--text-secondary)'}">${pct}%</span></div></div><div class="increment-body"><div class="ticket-list" id="tickets-${inc.num}"></div></div>`;
     content.appendChild(sec);
     const tl=sec.querySelector(".ticket-list");
     inc.tickets.forEach(t=>{
       const ic=!!checked[t.id];const c=document.createElement("div");
-      c.className="ticket"+(ic?" checked":"");c.dataset.id=t.id;c.dataset.priority=t.p.toLowerCase();
-      c.innerHTML=`<label class="ticket-checkbox"><input type="checkbox" ${ic?"checked":""} onchange="toggleTicket('${t.id}',this)"><span class="checkmark"></span></label><div class="ticket-info"><div class="ticket-top"><span class="ticket-id">${t.id}</span><span class="ticket-title">${t.title}</span></div><div class="ticket-deps">deps: <span>${t.deps}</span></div></div><div class="ticket-badges"><span class="badge badge-${t.p.toLowerCase()}">${t.p}</span><span class="badge badge-est">${t.est} pts</span>${t.tech?`<span class="badge badge-new">${t.tech}</span>`:""}</div>`;
+      c.className="ticket"+(ic?" checked":"");c.dataset.id=t.id;c.dataset.priority=t.p.toLowerCase();c.dataset.layer=inc.layer;
+      const routeBadge=t.route?`<span class="badge badge-route">${t.route}</span>`:"";
+      c.innerHTML=`<label class="ticket-checkbox"><input type="checkbox" ${ic?"checked":""} onchange="toggleTicket('${t.id}',this)"><span class="checkmark"></span></label><div class="ticket-info"><div class="ticket-top"><span class="ticket-id">${t.id}</span><span class="ticket-title">${t.title}</span></div><div class="ticket-deps">deps: <span>${t.deps}</span></div></div><div class="ticket-badges"><span class="badge badge-${t.p.toLowerCase()}">${t.p}</span><span class="badge badge-est">${t.est} pts</span>${t.tech?`<span class="badge badge-new">${t.tech}</span>`:""}${routeBadge}</div>`;
       tl.appendChild(c);
     });
   });
@@ -428,22 +530,42 @@ function render(){
   });
   updateGlobalStats();applyFilters();
 }
+
 function toggleTicket(id,el){if(el.checked)checked[id]=true;else delete checked[id];saveState();const c=el.closest(".ticket");c.classList.toggle("checked",el.checked);updateIncrementProgress(el.closest(".increment"));updateGlobalStats();updateNav();applyFilters()}
 function updateIncrementProgress(inc){const done=inc.querySelectorAll(".ticket.checked").length;const total=inc.querySelectorAll(".ticket").length;const pct=total?Math.round(done/total*100):0;inc.querySelector(".increment-count").textContent=`${done}/${total}`;inc.querySelector(".increment-progress-fill").style.width=pct+"%";const p=inc.querySelector(".increment-pct");p.textContent=pct+"%";p.style.color=pct===100?"var(--accent-green)":"var(--text-secondary)";inc.classList.toggle("complete",pct===100)}
 function updateGlobalStats(){const total=INCREMENTS.reduce((s,i)=>s+i.tickets.length,0);const done=Object.keys(checked).length;const pct=total?Math.round(done/total*100):0;const ptsDone=INCREMENTS.reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).reduce((a,t)=>a+t.est,0),0);document.getElementById("globalPct").textContent=pct+"%";document.getElementById("globalFill").style.width=pct+"%";document.getElementById("statDone").textContent=done;document.getElementById("statTotal").textContent=total;document.getElementById("statPts").textContent=ptsDone}
-function updateNav(){const ni=document.querySelectorAll(".nav-item");INCREMENTS.forEach((inc,i)=>{const done=inc.tickets.filter(t=>checked[t.id]).length;const total=inc.tickets.length;if(!ni[i])return;ni[i].querySelector(".nav-progress").textContent=`${done}/${total}`;ni[i].classList.toggle("complete",done===total)})}
+function updateNav(){document.querySelectorAll("#navList .nav-item").forEach(ni=>{const numEl=ni.querySelector(".nav-num");if(!numEl)return;const num=parseInt(numEl.textContent);const inc=INCREMENTS.find(i=>i.num===num);if(!inc)return;const done=inc.tickets.filter(t=>checked[t.id]).length;const total=inc.tickets.length;const prog=ni.querySelector(".nav-progress");if(prog)prog.textContent=`${done}/${total}`;ni.classList.toggle("complete",done===total)})}
 function toggleIncrement(h){h.parentElement.classList.toggle("open")}
 function expandAll(){document.querySelectorAll(".increment").forEach(e=>e.classList.add("open"))}
 function collapseAll(){document.querySelectorAll(".increment").forEach(e=>e.classList.remove("open"))}
 function setFilter(f,btn){currentFilter=f;document.querySelectorAll("#filterBar .filter-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");applyFilters()}
-function applyFilters(){const s=(document.getElementById("searchInput").value||"").toLowerCase();document.querySelectorAll(".ticket").forEach(c=>{const id=c.dataset.id.toLowerCase(),ti=c.querySelector(".ticket-title").textContent.toLowerCase(),pr=c.dataset.priority,ic=c.classList.contains("checked");let show=true;if(currentFilter==="todo")show=!ic;else if(currentFilter==="done")show=ic;else if(currentFilter==="p0")show=pr==="p0";else if(currentFilter==="p1")show=pr==="p1";if(show&&s)show=id.includes(s)||ti.includes(s);c.classList.toggle("hidden",!show)});document.querySelectorAll(".increment").forEach(inc=>{const vis=inc.querySelectorAll(".ticket:not(.hidden)").length;inc.style.display=(vis===0&&(currentFilter!=="all"||s))?"none":""})}
+function applyFilters(){
+  const s=(document.getElementById("searchInput").value||"").toLowerCase();
+  document.querySelectorAll(".ticket").forEach(c=>{
+    const id=c.dataset.id.toLowerCase(),ti=c.querySelector(".ticket-title").textContent.toLowerCase(),pr=c.dataset.priority,ic=c.classList.contains("checked"),ly=c.dataset.layer;
+    let show=true;
+    if(currentFilter==="todo")show=!ic;
+    else if(currentFilter==="done")show=ic;
+    else if(currentFilter==="p0")show=pr==="p0";
+    else if(currentFilter==="p1")show=pr==="p1";
+    else if(currentFilter==="backend")show=ly==="backend";
+    else if(currentFilter==="frontend")show=ly==="frontend";
+    if(show&&s)show=id.includes(s)||ti.includes(s);
+    c.classList.toggle("hidden",!show);
+  });
+  document.querySelectorAll(".increment").forEach(inc=>{
+    const vis=inc.querySelectorAll(".ticket:not(.hidden)").length;
+    const layerMatch=currentFilter==="backend"?inc.dataset.layer==="backend":currentFilter==="frontend"?inc.dataset.layer==="frontend":true;
+    inc.style.display=(vis===0&&(currentFilter!=="all"||s))?"none":"";
+  });
+}
 function resetAll(){if(confirm("Reset all checkboxes?")){checked={};saveState();render()}}
 
 // ══════════════════════════════════════════
 // ── DIAGRAMS ──
 // ══════════════════════════════════════════
 function renderDiagrams(){
-  renderStateMachine();renderArchitecture();
+  renderStateMachine();renderArchitecture();renderFrontendMap();
   const dg=document.getElementById("diagramDeps");dg.innerHTML="";
   renderDepGraph();
 }
@@ -471,7 +593,6 @@ function renderStateMachine(){
     const line=svgEl("line",{x1:s.x+lw/2,y1:s.y,x2:e.x-e.label.length*5.5/2-10,y2:e.y,stroke:"#555570","stroke-width":"1.5","marker-end":"url(#ah)"});
     svg.appendChild(line);
   });
-  // replied -> intake_open (cross-row)
   svg.appendChild(svgEl("line",{x1:800,y1:95,x2:120,y2:188,stroke:"#4ec9b0","stroke-width":"1.5","stroke-dasharray":"4,3","marker-end":"url(#ah)",opacity:"0.6"}));
   states.forEach(s=>{
     const w=s.label.length*6.5+22,h=28,rx=6;
@@ -490,79 +611,181 @@ function renderStateMachine(){
 
 function renderArchitecture(){
   const c=document.getElementById("diagramArchitecture");if(c.childElementCount)return;
-  const W=880,H=380;const svg=svgEl("svg",{width:W,height:H,viewBox:`0 0 ${W} ${H}`});
+  const W=900,H=520;const svg=svgEl("svg",{width:W,height:H,viewBox:`0 0 ${W} ${H}`});
+  // frontend layer
+  const feY=30;
+  svg.appendChild(svgEl("rect",{x:20,y:feY,width:W-40,height:100,rx:10,fill:"none",stroke:"#9cdcfe","stroke-width":"1.5","stroke-dasharray":"6,3",opacity:"0.5"}));
+  const feLabel=svgEl("text",{x:W/2,y:feY-8,"text-anchor":"middle",fill:"#9cdcfe","font-family":"'JetBrains Mono',monospace","font-size":"10","font-weight":"700","letter-spacing":"1.5"});
+  feLabel.textContent="FRONTEND — NEXT.JS APP ROUTER";svg.appendChild(feLabel);
+  const feItems=["Operator Console","Account Workspace","Inbox & Queues","Trust Room","Proof/Offer","Workspace"];
+  feItems.forEach((item,i)=>{
+    const ix=40+i*142,iy=feY+15,bw=130,bh=34;
+    svg.appendChild(svgEl("rect",{x:ix,y:iy,width:bw,height:bh,rx:6,fill:"#1e1e30",stroke:"#9cdcfe","stroke-width":"1",opacity:"0.7"}));
+    const it=svgEl("text",{x:ix+bw/2,y:iy+20,"text-anchor":"middle",fill:"#d4d4e8","font-family":"'JetBrains Mono',monospace","font-size":"9.5"});
+    it.textContent=item;svg.appendChild(it);
+  });
+  const feLibs=["shadcn/ui","TanStack Query","TanStack Table","React Hook Form","Zod","ECharts"];
+  feLibs.forEach((item,i)=>{
+    const ix=40+i*142,iy=feY+58,bw=130,bh=28;
+    svg.appendChild(svgEl("rect",{x:ix,y:iy,width:bw,height:bh,rx:4,fill:"#16162a",stroke:"#9cdcfe","stroke-width":"0.8",opacity:"0.4"}));
+    const it=svgEl("text",{x:ix+bw/2,y:iy+17,"text-anchor":"middle",fill:"#8888aa","font-family":"'JetBrains Mono',monospace","font-size":"8.5"});
+    it.textContent=item;svg.appendChild(it);
+  });
+  // arrow from FE to API
+  svg.appendChild(svgEl("line",{x1:W/2,y1:feY+100,x2:W/2,y2:feY+120,stroke:"#555570","stroke-width":"1.5","marker-end":"url(#ah)"}));
+  // API bar
+  svg.appendChild(svgEl("rect",{x:20,y:feY+120,width:W-40,height:24,rx:4,fill:"#264f78",stroke:"#007acc","stroke-width":"1"}));
+  const apiLabel=svgEl("text",{x:W/2,y:feY+136,"text-anchor":"middle",fill:"#9cdcfe","font-family":"'JetBrains Mono',monospace","font-size":"9","font-weight":"600"});
+  apiLabel.textContent="FastAPI — REST + WebSocket";svg.appendChild(apiLabel);
+  // backend lanes
+  const laneY=feY+160;
   const lanes=[
     {label:"DISCOVERY LANE",x:20,w:270,color:"#569cd6",items:["Source Registry","Fetcher + Playwright","Page Classifier","Signal Extractor","Account Fusion","Narrative Gen"]},
     {label:"QUALIFICATION LANE",x:305,w:270,color:"#c586c0",items:["Firmographics","Pain Inference","ICP Scoring","Buyer Resolver","Contact Decision","Account Memory"]},
     {label:"CONTACT LANE",x:590,w:270,color:"#ce9178",items:["Policy Engine","Message Composer","Mailbox Orchestrator","Send Worker","Inbox / Reply","Kill Switches"]}
   ];
   lanes.forEach(lane=>{
-    svg.appendChild(svgEl("rect",{x:lane.x,y:30,width:lane.w,height:H-50,rx:10,fill:"none",stroke:lane.color,"stroke-width":"1.5","stroke-dasharray":"6,3",opacity:"0.5"}));
-    const t=svgEl("text",{x:lane.x+lane.w/2,y:20,"text-anchor":"middle",fill:lane.color,"font-family":"'JetBrains Mono',monospace","font-size":"10","font-weight":"700","letter-spacing":"1.5"});
+    svg.appendChild(svgEl("rect",{x:lane.x,y:laneY,width:lane.w,height:290,rx:10,fill:"none",stroke:lane.color,"stroke-width":"1.5","stroke-dasharray":"6,3",opacity:"0.5"}));
+    const t=svgEl("text",{x:lane.x+lane.w/2,y:laneY-8,"text-anchor":"middle",fill:lane.color,"font-family":"'JetBrains Mono',monospace","font-size":"10","font-weight":"700","letter-spacing":"1.5"});
     t.textContent=lane.label;svg.appendChild(t);
     lane.items.forEach((item,i)=>{
-      const iy=55+i*52,bw=lane.w-30,bh=38;
+      const iy=laneY+15+i*44,bw=lane.w-30,bh=34;
       svg.appendChild(svgEl("rect",{x:lane.x+15,y:iy,width:bw,height:bh,rx:6,fill:"#1e1e30",stroke:lane.color,"stroke-width":"1",opacity:"0.7"}));
-      const it=svgEl("text",{x:lane.x+lane.w/2,y:iy+22,"text-anchor":"middle",fill:"#d4d4e8","font-family":"'JetBrains Mono',monospace","font-size":"10.5"});
+      const it=svgEl("text",{x:lane.x+lane.w/2,y:iy+20,"text-anchor":"middle",fill:"#d4d4e8","font-family":"'JetBrains Mono',monospace","font-size":"10.5"});
       it.textContent=item;svg.appendChild(it);
     });
   });
-  // arrows between lanes
-  [[275,160,305,160],[275,265,305,265],[560,160,590,160],[560,265,590,265]].forEach(([x1,y1,x2,y2])=>{
+  [[275,laneY+80,305,laneY+80],[275,laneY+170,305,laneY+170],[560,laneY+80,590,laneY+80],[560,laneY+170,590,laneY+170]].forEach(([x1,y1,x2,y2])=>{
     svg.appendChild(svgEl("line",{x1,y1,x2,y2,stroke:"#555570","stroke-width":"1.5","marker-end":"url(#ah)"}));
   });
-  // shared defs
   const defs=svgEl("defs");const m=svgEl("marker",{id:"ah",markerWidth:"8",markerHeight:"6",refX:"8",refY:"3",orient:"auto"});m.appendChild(svgEl("polygon",{points:"0 0,8 3,0 6",fill:"#555570"}));defs.appendChild(m);svg.insertBefore(defs,svg.firstChild);
-  // bottom bar
-  svg.appendChild(svgEl("rect",{x:20,y:H-15,width:W-40,height:12,rx:4,fill:"#1a3a2a",stroke:"#2ea043","stroke-width":"1"}));
-  const bt=svgEl("text",{x:W/2,y:H-6,"text-anchor":"middle",fill:"#2ea043","font-family":"'JetBrains Mono',monospace","font-size":"8","font-weight":"600"});
+  svg.appendChild(svgEl("rect",{x:20,y:H-18,width:W-40,height:14,rx:4,fill:"#1a3a2a",stroke:"#2ea043","stroke-width":"1"}));
+  const bt=svgEl("text",{x:W/2,y:H-8,"text-anchor":"middle",fill:"#2ea043","font-family":"'JetBrains Mono',monospace","font-size":"8","font-weight":"600"});
   bt.textContent="PostgreSQL  ·  Redis  ·  MinIO  ·  pgvector";svg.appendChild(bt);
+  c.appendChild(svg);
+}
+
+function renderFrontendMap(){
+  const c=document.getElementById("diagramFrontend");if(c.childElementCount)return;
+  const W=900,H=420;const svg=svgEl("svg",{width:W,height:H,viewBox:`0 0 ${W} ${H}`});
+  const defs=svgEl("defs");const m=svgEl("marker",{id:"ahf",markerWidth:"7",markerHeight:"5",refX:"7",refY:"2.5",orient:"auto"});m.appendChild(svgEl("polygon",{points:"0 0,7 2.5,0 5",fill:"#555570"}));defs.appendChild(m);svg.appendChild(defs);
+  const sections=[
+    {label:"OPERATOR CONSOLE",x:20,y:30,w:420,h:170,color:"#569cd6",routes:[
+      "/app/discovery","/app/discovery/sources","/app/discovery/runs/[runId]","/app/discovery/signals",
+      "/app/accounts","/app/accounts/[accountId]","/app/inbox","/app/inbox/queues"
+    ]},
+    {label:"SETTINGS & COMPLIANCE",x:460,y:30,w:420,h:170,color:"#c586c0",routes:[
+      "/app/settings/sending-domains","/app/settings/mailboxes","/app/settings/compliance",
+      "/app/settings/suppression","/app/settings/policy-simulator","/app/outreach/budgets",
+      "/app/analytics/deliverability","/app/analytics/revenue"
+    ]},
+    {label:"CUSTOMER-FACING",x:20,y:230,w:420,h:160,color:"#4ec9b0",routes:[
+      "/r/[token]","/r/[token]/status","/proof/[token]","/proof/[token]/summary",
+      "/offer/[offerId]","/checkout/[offerId]","/workspace","/workspace/docs"
+    ]},
+    {label:"LEARNING & OPS",x:460,y:230,w:420,h:160,color:"#d7ba7d",routes:[
+      "/app/learning/labels","/app/learning/evals","/app/learning/shadow",
+      "/app/ops","/app/ops/changes","/app/ops/runbooks","/app/onboarding","/workspace/health"
+    ]}
+  ];
+  sections.forEach(sec=>{
+    svg.appendChild(svgEl("rect",{x:sec.x,y:sec.y,width:sec.w,height:sec.h,rx:8,fill:"none",stroke:sec.color,"stroke-width":"1.5","stroke-dasharray":"6,3",opacity:"0.5"}));
+    const t=svgEl("text",{x:sec.x+sec.w/2,y:sec.y-6,"text-anchor":"middle",fill:sec.color,"font-family":"'JetBrains Mono',monospace","font-size":"9","font-weight":"700","letter-spacing":"1.5"});
+    t.textContent=sec.label;svg.appendChild(t);
+    const cols=2,rw=(sec.w-30)/cols,rh=28,gap=4;
+    sec.routes.forEach((route,i)=>{
+      const col=i%cols,row=Math.floor(i/cols);
+      const rx=sec.x+10+col*(rw+gap),ry=sec.y+12+row*(rh+gap);
+      svg.appendChild(svgEl("rect",{x:rx,y:ry,width:rw,height:rh,rx:4,fill:"#1e1e30",stroke:sec.color,"stroke-width":"0.8",opacity:"0.6"}));
+      const rt=svgEl("text",{x:rx+rw/2,y:ry+17,"text-anchor":"middle",fill:"#d4d4e8","font-family":"'JetBrains Mono',monospace","font-size":"8.5"});
+      rt.textContent=route;svg.appendChild(rt);
+    });
+  });
+  // shared libs bar
+  svg.appendChild(svgEl("rect",{x:20,y:H-20,width:W-40,height:16,rx:4,fill:"#16162a",stroke:"#9cdcfe","stroke-width":"1"}));
+  const lb=svgEl("text",{x:W/2,y:H-9,"text-anchor":"middle",fill:"#9cdcfe","font-family":"'JetBrains Mono',monospace","font-size":"8","font-weight":"600"});
+  lb.textContent="libs/ui  ·  libs/api-client  ·  libs/forms  ·  libs/tables  ·  Tailwind CSS  ·  shadcn/ui";svg.appendChild(lb);
   c.appendChild(svg);
 }
 
 function renderDepGraph(){
   const c=document.getElementById("diagramDeps");
-  const W=900,H=200;const svg=svgEl("svg",{width:W,height:H,viewBox:`0 0 ${W} ${H}`});
-  const nodes=[
-    {id:"1",label:"Foundation",x:60,color:COLORS.blue},
-    {id:"2",label:"Acquisition",x:175,color:COLORS.purple},
-    {id:"3",label:"Fusion",x:295,color:COLORS.green},
-    {id:"4",label:"Pain/ICP",x:400,color:COLORS.teal},
-    {id:"5",label:"Buyer",x:495,color:COLORS.gold},
-    {id:"6",label:"Outreach",x:600,color:COLORS.orange},
-    {id:"7",label:"Proof/Pay",x:710,color:COLORS.param},
-    {id:"8",label:"Learning",x:600,color:COLORS.decorator},
-    {id:"9",label:"Scale",x:820,color:COLORS.number}
+  const W=900,H=340;const svg=svgEl("svg",{width:W,height:H,viewBox:`0 0 ${W} ${H}`});
+  const beLabel=svgEl("text",{x:20,y:16,fill:"#4ec9b0","font-family":"'JetBrains Mono',monospace","font-size":"9","font-weight":"700","letter-spacing":"1"});
+  beLabel.textContent="BACKEND";svg.appendChild(beLabel);
+  const feLabel=svgEl("text",{x:20,y:196,fill:"#9cdcfe","font-family":"'JetBrains Mono',monospace","font-size":"9","font-weight":"700","letter-spacing":"1"});
+  feLabel.textContent="FRONTEND";svg.appendChild(feLabel);
+  // separator
+  svg.appendChild(svgEl("line",{x1:20,y1:165,x2:W-20,y2:165,stroke:"#2a2a40","stroke-width":"1","stroke-dasharray":"4,3"}));
+
+  const beNodes=[
+    {id:"1",label:"Foundation",x:60,y:70,color:COLORS.blue},
+    {id:"2",label:"Acquisition",x:175,y:70,color:COLORS.purple},
+    {id:"3",label:"Fusion",x:295,y:70,color:COLORS.green},
+    {id:"4",label:"Pain/ICP",x:400,y:70,color:COLORS.teal},
+    {id:"5",label:"Buyer",x:495,y:70,color:COLORS.gold},
+    {id:"6",label:"Outreach",x:600,y:70,color:COLORS.orange},
+    {id:"7",label:"Proof/Pay",x:710,y:70,color:COLORS.param},
+    {id:"8",label:"Learning",x:600,y:130,color:COLORS.decorator},
+    {id:"9",label:"Scale",x:820,y:130,color:COLORS.number}
   ];
-  const Y=90,eY=160;
-  nodes[7].y=eY;nodes[8].y=eY;
-  const edges=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[5,7],[7,8],[6,8]];
+  const feNodes=[
+    {id:"10",label:"FE Shell",x:60,y:250,color:COLORS.blue},
+    {id:"11",label:"Disc. UI",x:175,y:250,color:COLORS.purple},
+    {id:"12",label:"Account UI",x:295,y:250,color:COLORS.green},
+    {id:"13",label:"Buyer UI",x:400,y:250,color:COLORS.teal},
+    {id:"14",label:"Send UI",x:495,y:250,color:COLORS.gold},
+    {id:"15",label:"Inbox UI",x:600,y:250,color:COLORS.orange},
+    {id:"16",label:"Trust Room",x:710,y:250,color:COLORS.param},
+    {id:"17",label:"Offer UI",x:600,y:310,color:COLORS.decorator},
+    {id:"18",label:"Ops UI",x:820,y:310,color:COLORS.number}
+  ];
+  const allNodes=[...beNodes,...feNodes];
+  const beEdges=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[5,7],[7,8],[6,8]];
+  const feEdges=[[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[14,16],[16,17],[15,17]];
+  const crossEdges=[[0,9],[1,10],[3,12],[5,14],[6,15],[6,16],[7,17],[8,17]];
+
   const defs=svgEl("defs");const m=svgEl("marker",{id:"ahd",markerWidth:"7",markerHeight:"5",refX:"7",refY:"2.5",orient:"auto"});m.appendChild(svgEl("polygon",{points:"0 0,7 2.5,0 5",fill:"#555570"}));defs.appendChild(m);svg.appendChild(defs);
-  edges.forEach(([a,b])=>{
-    const s=nodes[a],e=nodes[b];const sy=s.y||Y,ey=e.y||Y;
-    const w1=s.label.length*5+16;
-    svg.appendChild(svgEl("line",{x1:s.x+w1/2+2,y1:sy,x2:e.x-e.label.length*5/2-10,y2:ey,stroke:"#555570","stroke-width":"1.5","marker-end":"url(#ahd)"}));
+
+  function drawEdges(edges,nodes,stroke,dash){
+    edges.forEach(([a,b])=>{
+      const s=nodes[a],e=nodes[b];
+      const w1=s.label.length*5+16;
+      const attrs={x1:s.x+w1/2+2,y1:s.y,x2:e.x-e.label.length*5/2-10,y2:e.y,stroke,"stroke-width":"1.5","marker-end":"url(#ahd)"};
+      if(dash)attrs["stroke-dasharray"]="4,3";
+      svg.appendChild(svgEl("line",attrs));
+    });
+  }
+  drawEdges(beEdges,beNodes,"#555570",false);
+  drawEdges(feEdges,feNodes,"#555570",false);
+  crossEdges.forEach(([a,b])=>{
+    const s=beNodes[a],e=feNodes[b-9];
+    svg.appendChild(svgEl("line",{x1:s.x,y1:s.y+15,x2:e.x,y2:e.y-15,stroke:"#3d3d5c","stroke-width":"1","stroke-dasharray":"3,3","marker-end":"url(#ahd)",opacity:"0.5"}));
   });
-  nodes.forEach(n=>{
-    const ny=n.y||Y,w=n.label.length*6.5+18,h=30;
-    const inc=INCREMENTS.find(i=>i.num===parseInt(n.id));
-    const done=inc?inc.tickets.filter(t=>checked[t.id]).length:0;
-    const total=inc?inc.tickets.length:0;
-    const pct=total?done/total:0;
-    svg.appendChild(svgEl("rect",{x:n.x-w/2,y:ny-h/2,width:w,height:h,rx:6,fill:"#1e1e30",stroke:n.color,"stroke-width":"1.5"}));
-    if(pct>0){svg.appendChild(svgEl("rect",{x:n.x-w/2,y:ny+h/2-4,width:w*pct,height:4,rx:2,fill:n.color,opacity:"0.7"}))}
-    const t=svgEl("text",{x:n.x,y:ny+1,"text-anchor":"middle",fill:n.color,"font-family":"'JetBrains Mono',monospace","font-size":"10","font-weight":"600"});
-    t.textContent=n.label;svg.appendChild(t);
-    const sub=svgEl("text",{x:n.x,y:ny+14,"text-anchor":"middle",fill:"#555570","font-family":"'JetBrains Mono',monospace","font-size":"8"});
-    sub.textContent=`${done}/${total}`;svg.appendChild(sub);
-  });
+
+  function drawNodes(nodes){
+    nodes.forEach(n=>{
+      const w=n.label.length*6.5+18,h=30;
+      const inc=INCREMENTS.find(i=>i.num===parseInt(n.id));
+      const done=inc?inc.tickets.filter(t=>checked[t.id]).length:0;
+      const total=inc?inc.tickets.length:0;
+      const pct=total?done/total:0;
+      svg.appendChild(svgEl("rect",{x:n.x-w/2,y:n.y-h/2,width:w,height:h,rx:6,fill:"#1e1e30",stroke:n.color,"stroke-width":"1.5"}));
+      if(pct>0){svg.appendChild(svgEl("rect",{x:n.x-w/2,y:n.y+h/2-4,width:w*pct,height:4,rx:2,fill:n.color,opacity:"0.7"}))}
+      const t=svgEl("text",{x:n.x,y:n.y+1,"text-anchor":"middle",fill:n.color,"font-family":"'JetBrains Mono',monospace","font-size":"10","font-weight":"600"});
+      t.textContent=n.label;svg.appendChild(t);
+      const sub=svgEl("text",{x:n.x,y:n.y+14,"text-anchor":"middle",fill:"#555570","font-family":"'JetBrains Mono',monospace","font-size":"8"});
+      sub.textContent=`${done}/${total}`;svg.appendChild(sub);
+    });
+  }
+  drawNodes(beNodes);drawNodes(feNodes);
   c.appendChild(svg);
 }
 
 // ══════════════════════════════════════════
 // ── CHARTS ──
 // ══════════════════════════════════════════
-function drawAllCharts(){drawDonut();drawBars();drawPriority();drawLanes();drawBurndown()}
+function drawAllCharts(){drawDonut();drawLayerSplit();drawBars();drawPriority();drawLanes();drawBurndown()}
 
 function drawDonut(){
   const cv=document.getElementById("chartDonut"),ctx=cv.getContext("2d");
@@ -577,38 +800,70 @@ function drawDonut(){
   ctx.fillStyle="#555570";ctx.font="500 11px 'JetBrains Mono'";ctx.fillText(done+" / "+total+" tickets",cx,cy+18);
 }
 
+function drawLayerSplit(){
+  const cv=document.getElementById("chartLayerSplit"),ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const be=INCREMENTS.filter(i=>i.layer==="backend");
+  const fe=INCREMENTS.filter(i=>i.layer==="frontend");
+  const beTotal=be.reduce((s,i)=>s+i.tickets.length,0);
+  const feTotal=fe.reduce((s,i)=>s+i.tickets.length,0);
+  const beDone=be.reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).length,0);
+  const feDone=fe.reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).length,0);
+  const bePts=be.reduce((s,i)=>s+i.tickets.reduce((a,t)=>a+t.est,0),0);
+  const fePts=fe.reduce((s,i)=>s+i.tickets.reduce((a,t)=>a+t.est,0),0);
+  const beDonePts=be.reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).reduce((a,t)=>a+t.est,0),0);
+  const feDonePts=fe.reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).reduce((a,t)=>a+t.est,0),0);
+  // two half-donuts
+  const cx1=100,cx2=280,cy=110,r=70,lw=20;
+  [{cx:cx1,total:beTotal,done:beDone,color:"#4ec9b0",label:"Backend",pts:bePts,donePts:beDonePts},
+   {cx:cx2,total:feTotal,done:feDone,color:"#9cdcfe",label:"Frontend",pts:fePts,donePts:feDonePts}].forEach(d=>{
+    const pct=d.total?d.done/d.total:0;
+    ctx.beginPath();ctx.arc(d.cx,cy,r,0,Math.PI*2);ctx.strokeStyle="#2a2a40";ctx.lineWidth=lw;ctx.stroke();
+    if(pct>0){ctx.beginPath();ctx.arc(d.cx,cy,r,-Math.PI/2,-Math.PI/2+Math.PI*2*pct);ctx.strokeStyle=d.color;ctx.lineWidth=lw;ctx.lineCap="round";ctx.stroke()}
+    ctx.fillStyle="#d4d4e8";ctx.font="700 20px 'JetBrains Mono'";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(Math.round(pct*100)+"%",d.cx,cy-4);
+    ctx.fillStyle="#8888aa";ctx.font="500 9px 'JetBrains Mono'";ctx.fillText(d.done+"/"+d.total,d.cx,cy+14);
+    ctx.fillStyle=d.color;ctx.font="600 10px 'JetBrains Mono'";ctx.fillText(d.label,d.cx,cy+r+26);
+    ctx.fillStyle="#555570";ctx.font="500 9px 'JetBrains Mono'";ctx.fillText(d.donePts+"/"+d.pts+" pts",d.cx,cy+r+40);
+  });
+}
+
 function drawBars(){
   const cv=document.getElementById("chartBars"),ctx=cv.getContext("2d");
   ctx.clearRect(0,0,cv.width,cv.height);
-  const pad=40,bw=28,gap=16,baseY=cv.height-30;
+  const pad=40,gap=6,baseY=cv.height-40;
+  const bw=Math.min(36,Math.floor((cv.width-pad*2-gap*(INCREMENTS.length-1))/INCREMENTS.length));
   INCREMENTS.forEach((inc,i)=>{
     const done=inc.tickets.filter(t=>checked[t.id]).length;
     const total=inc.tickets.length;
     const pct=total?done/total:0;
     const x=pad+i*(bw+gap);
     const maxH=baseY-30;
-    ctx.fillStyle="#2a2a40";ctx.beginPath();ctx.roundRect(x,baseY-maxH,bw,maxH,4);ctx.fill();
-    if(pct>0){ctx.fillStyle=COLORS[inc.color]||"#569cd6";ctx.beginPath();ctx.roundRect(x,baseY-maxH*pct,bw,maxH*pct,4);ctx.fill()}
-    ctx.fillStyle="#555570";ctx.font="600 9px 'JetBrains Mono'";ctx.textAlign="center";ctx.fillText(inc.num,x+bw/2,baseY+12);
-    ctx.fillStyle=COLORS[inc.color]||"#569cd6";ctx.font="600 9px 'JetBrains Mono'";ctx.fillText(Math.round(pct*100)+"%",x+bw/2,baseY-maxH*pct-6);
+    ctx.fillStyle="#2a2a40";ctx.beginPath();ctx.roundRect(x,baseY-maxH,bw,maxH,3);ctx.fill();
+    if(pct>0){ctx.fillStyle=COLORS[inc.color]||"#569cd6";ctx.beginPath();ctx.roundRect(x,baseY-maxH*pct,bw,maxH*pct,3);ctx.fill()}
+    ctx.fillStyle=inc.layer==="frontend"?"#9cdcfe":"#555570";ctx.font="600 8px 'JetBrains Mono'";ctx.textAlign="center";
+    ctx.fillText(inc.num,x+bw/2,baseY+12);
+    if(inc.layer==="frontend"){ctx.fillText("FE",x+bw/2,baseY+22)}
+    ctx.fillStyle=COLORS[inc.color]||"#569cd6";ctx.font="600 8px 'JetBrains Mono'";
+    ctx.fillText(Math.round(pct*100)+"%",x+bw/2,baseY-maxH*pct-5);
   });
 }
 
 function drawPriority(){
   const cv=document.getElementById("chartPriority"),ctx=cv.getContext("2d");
   ctx.clearRect(0,0,cv.width,cv.height);
-  const pad=40,bw=28,gap=16,baseY=cv.height-30;
+  const pad=40,gap=6,baseY=cv.height-40;
+  const bw=Math.min(36,Math.floor((cv.width-pad*2-gap*(INCREMENTS.length-1))/INCREMENTS.length));
+  const maxPts=Math.max(...INCREMENTS.map(inc=>inc.tickets.reduce((s,t)=>s+t.est,0)));
   INCREMENTS.forEach((inc,i)=>{
     const p0=inc.tickets.filter(t=>t.p==="P0").reduce((s,t)=>s+t.est,0);
     const p1=inc.tickets.filter(t=>t.p==="P1").reduce((s,t)=>s+t.est,0);
-    const maxPts=80;const x=pad+i*(bw+gap);const maxH=baseY-30;
+    const x=pad+i*(bw+gap);const maxH=baseY-30;
     const h0=maxH*(p0/maxPts),h1=maxH*(p1/maxPts);
-    ctx.fillStyle="rgba(248,81,73,0.6)";ctx.beginPath();ctx.roundRect(x,baseY-h0-h1,bw,h0,[4,4,0,0]);ctx.fill();
-    if(p1>0){ctx.fillStyle="rgba(210,153,34,0.6)";ctx.beginPath();ctx.roundRect(x,baseY-h1,bw,h1,[0,0,4,4]);ctx.fill()}
-    ctx.fillStyle="#555570";ctx.font="600 9px 'JetBrains Mono'";ctx.textAlign="center";ctx.fillText(inc.num,x+bw/2,baseY+12);
+    ctx.fillStyle="rgba(248,81,73,0.6)";ctx.beginPath();ctx.roundRect(x,baseY-h0-h1,bw,h0,[3,3,0,0]);ctx.fill();
+    if(p1>0){ctx.fillStyle="rgba(210,153,34,0.6)";ctx.beginPath();ctx.roundRect(x,baseY-h1,bw,h1,[0,0,3,3]);ctx.fill()}
+    ctx.fillStyle=inc.layer==="frontend"?"#9cdcfe":"#555570";ctx.font="600 8px 'JetBrains Mono'";ctx.textAlign="center";ctx.fillText(inc.num,x+bw/2,baseY+12);
     ctx.fillStyle="#8888aa";ctx.font="500 8px 'JetBrains Mono'";ctx.fillText(p0+p1+"p",x+bw/2,baseY-h0-h1-5);
   });
-  // legend
   ctx.fillStyle="rgba(248,81,73,0.6)";ctx.fillRect(cv.width-100,10,10,10);
   ctx.fillStyle="#d4d4e8";ctx.font="500 9px 'JetBrains Mono'";ctx.textAlign="left";ctx.fillText("P0",cv.width-86,19);
   ctx.fillStyle="rgba(210,153,34,0.6)";ctx.fillRect(cv.width-100,24,10,10);
@@ -625,18 +880,30 @@ function drawLanes(){
     {name:"Outreach",incs:[6],color:COLORS.orange},
     {name:"Proof/Pay",incs:[7],color:COLORS.param},
     {name:"Learning",incs:[8],color:COLORS.decorator},
-    {name:"Scale/Ops",incs:[9],color:COLORS.number}
+    {name:"Scale/Ops",incs:[9],color:COLORS.number},
+    {name:"—",incs:[],color:"#2a2a40",sep:true},
+    {name:"FE Shell",incs:[10],color:COLORS.blue},
+    {name:"FE Disc.",incs:[11],color:COLORS.purple},
+    {name:"FE Acct.",incs:[12,13],color:COLORS.teal},
+    {name:"FE Send",incs:[14,15],color:COLORS.orange},
+    {name:"FE Trust",incs:[16,17],color:COLORS.param},
+    {name:"FE Ops",incs:[18],color:COLORS.number}
   ];
-  const pad=80,barH=24,gap=8,maxW=cv.width-pad-20;
-  const maxPts=Math.max(...lanes.map(l=>l.incs.reduce((s,n)=>s+INCREMENTS[n-1].tickets.reduce((a,t)=>a+t.est,0),0)));
+  const pad=80,barH=18,gap=5,maxW=cv.width-pad-30;
+  const maxPts=Math.max(...lanes.filter(l=>!l.sep).map(l=>l.incs.reduce((s,n)=>s+INCREMENTS[n-1].tickets.reduce((a,t)=>a+t.est,0),0)));
   lanes.forEach((lane,i)=>{
+    const y=10+i*(barH+gap);
+    if(lane.sep){
+      ctx.strokeStyle="#2a2a40";ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(pad,y+barH/2);ctx.lineTo(pad+maxW,y+barH/2);ctx.stroke();ctx.setLineDash([]);
+      return;
+    }
     const pts=lane.incs.reduce((s,n)=>s+INCREMENTS[n-1].tickets.reduce((a,t)=>a+t.est,0),0);
     const donePts=lane.incs.reduce((s,n)=>s+INCREMENTS[n-1].tickets.filter(t=>checked[t.id]).reduce((a,t)=>a+t.est,0),0);
-    const y=20+i*(barH+gap);const w=maxW*(pts/maxPts);const wd=maxW*(donePts/maxPts);
-    ctx.fillStyle="#2a2a40";ctx.beginPath();ctx.roundRect(pad,y,w,barH,4);ctx.fill();
-    if(wd>0){ctx.fillStyle=lane.color;ctx.globalAlpha=0.7;ctx.beginPath();ctx.roundRect(pad,y,wd,barH,4);ctx.fill();ctx.globalAlpha=1}
-    ctx.fillStyle="#8888aa";ctx.font="500 9px 'JetBrains Mono'";ctx.textAlign="right";ctx.fillText(lane.name,pad-6,y+barH/2+3);
-    ctx.fillStyle="#d4d4e8";ctx.font="600 9px 'JetBrains Mono'";ctx.textAlign="left";ctx.fillText(pts+"pts",pad+w+6,y+barH/2+3);
+    const w=maxW*(pts/maxPts);const wd=maxW*(donePts/maxPts);
+    ctx.fillStyle="#2a2a40";ctx.beginPath();ctx.roundRect(pad,y,w,barH,3);ctx.fill();
+    if(wd>0){ctx.fillStyle=lane.color;ctx.globalAlpha=0.7;ctx.beginPath();ctx.roundRect(pad,y,wd,barH,3);ctx.fill();ctx.globalAlpha=1}
+    ctx.fillStyle="#8888aa";ctx.font="500 8px 'JetBrains Mono'";ctx.textAlign="right";ctx.fillText(lane.name,pad-6,y+barH/2+3);
+    ctx.fillStyle="#d4d4e8";ctx.font="600 8px 'JetBrains Mono'";ctx.textAlign="left";ctx.fillText(pts+"pts",pad+w+6,y+barH/2+3);
   });
 }
 
@@ -646,11 +913,10 @@ function drawBurndown(){
   const totalPts=INCREMENTS.reduce((s,i)=>s+i.tickets.reduce((a,t)=>a+t.est,0),0);
   const donePts=INCREMENTS.reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).reduce((a,t)=>a+t.est,0),0);
   const remaining=totalPts-donePts;
-  const velocities=[5,10,15,20];
+  const velocities=[10,15,20,30];
   const maxWeeks=Math.ceil(totalPts/velocities[0])+2;
   const pad={l:50,r:20,t:20,b:30};
   const gw=cv.width-pad.l-pad.r,gh=cv.height-pad.t-pad.b;
-  // grid
   ctx.strokeStyle="#2a2a40";ctx.lineWidth=1;
   for(let i=0;i<=5;i++){const y=pad.t+gh*i/5;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+gw,y);ctx.stroke();ctx.fillStyle="#555570";ctx.font="500 9px 'JetBrains Mono'";ctx.textAlign="right";ctx.fillText(Math.round(totalPts*(1-i/5)),pad.l-6,y+3)}
   for(let i=0;i<=maxWeeks;i+=5){const x=pad.l+gw*i/maxWeeks;ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+gh);ctx.stroke();ctx.fillStyle="#555570";ctx.font="500 9px 'JetBrains Mono'";ctx.textAlign="center";ctx.fillText("W"+i,x,pad.t+gh+14)}
@@ -661,9 +927,8 @@ function drawBurndown(){
     ctx.moveTo(pad.l,pad.t+gh*(1-remaining/totalPts));
     for(let w=0;w<=weeks;w++){const rem=Math.max(0,remaining-v*w);const x=pad.l+gw*w/maxWeeks;const y=pad.t+gh*(1-rem/totalPts);ctx.lineTo(x,y)}
     ctx.stroke();ctx.setLineDash([]);
-    const endX=pad.l+gw*weeks/maxWeeks;ctx.fillStyle=vColors[vi];ctx.font="600 9px 'JetBrains Mono'";ctx.textAlign="left";ctx.fillText(v+"pts/wk",endX+4,pad.t+gh*(1-0/totalPts)+3-(vi*12));
+    const endX=pad.l+gw*weeks/maxWeeks;ctx.fillStyle=vColors[vi];ctx.font="600 9px 'JetBrains Mono'";ctx.textAlign="left";ctx.fillText(v+"pts/wk",Math.min(endX+4,cv.width-60),pad.t+gh-vi*14-4);
   });
-  // current line
   const curY=pad.t+gh*(1-remaining/totalPts);
   ctx.strokeStyle="#4ec9b0";ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(pad.l,curY);ctx.lineTo(pad.l+gw,curY);ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle="#4ec9b0";ctx.font="600 9px 'JetBrains Mono'";ctx.textAlign="left";ctx.fillText("now: "+remaining+"pts remaining",pad.l+4,curY-6);
@@ -678,43 +943,44 @@ function renderPerformance(){
   const totalPts=INCREMENTS.reduce((s,i)=>s+i.tickets.reduce((a,t)=>a+t.est,0),0);
   const doneTickets=Object.keys(checked).length;
   const donePts=INCREMENTS.reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).reduce((a,t)=>a+t.est,0),0);
-  const p0Total=INCREMENTS.reduce((s,i)=>s+i.tickets.filter(t=>t.p==="P0").length,0);
-  const p0Done=INCREMENTS.reduce((s,i)=>s+i.tickets.filter(t=>t.p==="P0"&&checked[t.id]).length,0);
-  const p1Total=totalTickets-p0Total;
-  const p1Done=doneTickets-p0Done;
+  const beIncs=INCREMENTS.filter(i=>i.layer==="backend");
+  const feIncs=INCREMENTS.filter(i=>i.layer==="frontend");
+  const beTickets=beIncs.reduce((s,i)=>s+i.tickets.length,0);
+  const feTickets=feIncs.reduce((s,i)=>s+i.tickets.length,0);
+  const beDone=beIncs.reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).length,0);
+  const feDone=feIncs.reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).length,0);
+  const bePts=beIncs.reduce((s,i)=>s+i.tickets.reduce((a,t)=>a+t.est,0),0);
+  const fePts=feIncs.reduce((s,i)=>s+i.tickets.reduce((a,t)=>a+t.est,0),0);
   const critPath=INCREMENTS.slice(0,7).reduce((s,i)=>s+i.tickets.reduce((a,t)=>a+t.est,0),0);
   const critDone=INCREMENTS.slice(0,7).reduce((s,i)=>s+i.tickets.filter(t=>checked[t.id]).reduce((a,t)=>a+t.est,0),0);
   const pctDone=totalPts?(donePts/totalPts*100).toFixed(1):0;
-  const atVel10=Math.ceil((totalPts-donePts)/10);
-  const atVel15=Math.ceil((totalPts-donePts)/15);
-  const atVel20=Math.ceil((totalPts-donePts)/20);
 
   c.innerHTML=`
-  ${doneTickets===totalTickets?`<div style="background:linear-gradient(135deg,#1a3a2a,#1e1e30);border:1px solid var(--accent-green);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:24px;text-align:center">
-    <div style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--accent-green);margin-bottom:6px">BACKLOG COMPLETE — 69 / 69 TICKETS</div>
+  ${beDone===beTickets?`<div style="background:linear-gradient(135deg,#1a3a2a,#1e1e30);border:1px solid var(--accent-green);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:24px;text-align:center">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--accent-green);margin-bottom:6px">BACKEND COMPLETE — ${beDone} / ${beTickets} TICKETS</div>
     <div style="font-size:.8rem;color:var(--text-secondary)">9 increments · 580 tests passing · All pushed to GitHub</div>
   </div>`:''}
   <div class="perf-grid">
     <div class="perf-card blue"><div class="perf-label">Total Points</div><div class="perf-value" style="color:var(--py-builtin)">${totalPts}</div><div class="perf-sub">${donePts} completed (${pctDone}%)</div></div>
     <div class="perf-card green"><div class="perf-label">Tickets Done</div><div class="perf-value" style="color:var(--accent-green)">${doneTickets}<span style="font-size:.8rem;color:var(--text-muted)">/${totalTickets}</span></div><div class="perf-sub">${totalTickets-doneTickets} remaining</div></div>
-    <div class="perf-card teal"><div class="perf-label">Tests Passing</div><div class="perf-value" style="color:var(--py-class)">580</div><div class="perf-sub">All green · pytest</div></div>
-    <div class="perf-card purple"><div class="perf-label">Critical Path</div><div class="perf-value" style="color:var(--py-keyword)">${critPath}<span style="font-size:.7rem;color:var(--text-muted)">pts</span></div><div class="perf-sub">Inc 1–7 (${critDone} done)</div></div>
+    <div class="perf-card teal"><div class="perf-label">Backend</div><div class="perf-value" style="color:var(--py-class)">${beDone}<span style="font-size:.8rem;color:var(--text-muted)">/${beTickets}</span></div><div class="perf-sub">${bePts} pts · ${beDone===beTickets?'<span style="color:var(--accent-green)">DONE</span>':'in progress'}</div></div>
+    <div class="perf-card purple"><div class="perf-label">Frontend</div><div class="perf-value" style="color:var(--py-keyword)">${feDone}<span style="font-size:.8rem;color:var(--text-muted)">/${feTickets}</span></div><div class="perf-sub">${fePts} pts · ${feDone===feTickets?'<span style="color:var(--accent-green)">DONE</span>':'in progress'}</div></div>
   </div>
 
   <div class="chart-grid" style="margin-bottom:24px">
     <div class="chart-card full">
-      <div class="chart-card-header"><h3>Increment Breakdown</h3><p>Points, completion, priority mix, and estimated weeks per increment</p></div>
+      <div class="chart-card-header"><h3>Increment Breakdown</h3><p>Points, completion, priority mix — Backend (1-9) + Frontend (10-18)</p></div>
       <div class="chart-card-body" style="display:block;padding:0">
         <table class="perf-table">
-          <thead><tr><th>#</th><th>Increment</th><th>Tickets</th><th>Points</th><th>Tests</th><th>Done</th><th>P0/P1</th><th>Progress</th></tr></thead>
+          <thead><tr><th>#</th><th>Layer</th><th>Increment</th><th>Tickets</th><th>Points</th><th>Done</th><th>P0/P1</th><th>Progress</th></tr></thead>
           <tbody>
             ${INCREMENTS.map((inc,idx)=>{
-              const testCounts=[52,70,70,61,71,112,51,42,51];
               const t=inc.tickets.length;const pts=inc.tickets.reduce((a,t2)=>a+t2.est,0);
               const d=inc.tickets.filter(t2=>checked[t2.id]).length;const dp=inc.tickets.filter(t2=>checked[t2.id]).reduce((a,t2)=>a+t2.est,0);
               const p0=inc.tickets.filter(t2=>t2.p==="P0").length;
               const pct=t?Math.round(d/t*100):0;
-              return `<tr><td style="color:${COLORS[inc.color]};font-weight:700">${inc.num}</td><td style="color:var(--text-primary)">${inc.title}</td><td>${d}/${t}</td><td>${dp}/${pts}</td><td style="color:var(--py-class)">${testCounts[idx]}</td><td>${pct}%</td><td style="color:var(--accent-red)">${p0}<span style="color:var(--text-muted)">/${t-p0}</span></td><td><div class="perf-bar"><div class="perf-bar-fill" style="width:${pct}%;background:${COLORS[inc.color]}"></div></div></td></tr>`;
+              const layerBadge=inc.layer==='backend'?'<span style="color:var(--py-class)">BE</span>':'<span style="color:var(--py-param)">FE</span>';
+              return '<tr><td style="color:'+COLORS[inc.color]+';font-weight:700">'+inc.num+'</td><td>'+layerBadge+'</td><td style="color:var(--text-primary)">'+inc.title+'</td><td>'+d+'/'+t+'</td><td>'+dp+'/'+pts+'</td><td>'+pct+'%</td><td style="color:var(--accent-red)">'+p0+'<span style="color:var(--text-muted)">/'+(t-p0)+'</span></td><td><div class="perf-bar"><div class="perf-bar-fill" style="width:'+pct+'%;background:'+COLORS[inc.color]+'"></div></div></td></tr>';
             }).join('')}
           </tbody>
         </table>
@@ -722,7 +988,40 @@ function renderPerformance(){
     </div>
   </div>
 
-  <div class="chart-grid">
+  <div class="chart-grid" style="margin-bottom:24px">
+    <div class="chart-card">
+      <div class="chart-card-header"><h3>Frontend Route Inventory</h3><p>All routes mapped to tickets</p></div>
+      <div class="chart-card-body" style="display:block;padding:0;max-height:400px;overflow-y:auto">
+        <table class="perf-table">
+          <thead><tr><th>Route</th><th>Ticket</th><th>Status</th></tr></thead>
+          <tbody>
+            ${INCREMENTS.filter(i=>i.layer==="frontend").flatMap(inc=>inc.tickets.filter(t=>t.route&&t.route.startsWith("/")).map(t=>'<tr><td style="color:var(--py-string)">'+t.route+'</td><td style="color:var(--py-decorator)">'+t.id+'</td><td style="color:'+(checked[t.id]?'var(--accent-green)':'var(--accent-yellow)')+'">'+( checked[t.id]?'Built':'Pending')+'</td></tr>')).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header"><h3>Frontend Technology Stack</h3><p>New libraries beyond backend stack</p></div>
+      <div class="chart-card-body" style="display:block;padding:0">
+        <table class="perf-table">
+          <thead><tr><th>Technology</th><th>Purpose</th><th>Tickets</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--py-class)">Next.js</td><td>App Router framework</td><td style="color:var(--py-decorator)">FE-001</td></tr>
+            <tr><td style="color:var(--py-class)">Tailwind CSS</td><td>Utility-first styling</td><td style="color:var(--py-decorator)">FE-001</td></tr>
+            <tr><td style="color:var(--py-class)">shadcn/ui</td><td>Reusable UI primitives</td><td style="color:var(--py-decorator)">FE-001, FE-002</td></tr>
+            <tr><td style="color:var(--py-class)">TanStack Query</td><td>Server-state fetching & caching</td><td style="color:var(--py-decorator)">FE-003</td></tr>
+            <tr><td style="color:var(--py-class)">TanStack Table</td><td>Data grids & filters</td><td style="color:var(--py-decorator)">FE-005</td></tr>
+            <tr><td style="color:var(--py-class)">React Hook Form</td><td>Complex form handling</td><td style="color:var(--py-decorator)">FE-004</td></tr>
+            <tr><td style="color:var(--py-class)">Zod</td><td>Schema-based validation</td><td style="color:var(--py-decorator)">FE-004</td></tr>
+            <tr><td style="color:var(--py-class)">ECharts</td><td>Dashboards & analytics charts</td><td style="color:var(--py-decorator)">FE-101, FE-802+</td></tr>
+            <tr><td style="color:var(--py-class)">react-dropzone</td><td>Trust room upload UX</td><td style="color:var(--py-decorator)">FE-602</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-grid" style="margin-bottom:24px">
     <div class="chart-card">
       <div class="chart-card-header"><h3>System Throughput Targets</h3><p>Key performance benchmarks</p></div>
       <div class="chart-card-body" style="display:block;padding:0">
@@ -732,13 +1031,12 @@ function renderPerformance(){
             <tr><td>Candidate pages/day</td><td style="color:var(--py-function)">1,000,000</td><td style="color:var(--py-builtin)">Discovery</td></tr>
             <tr><td>Signals extracted/day</td><td style="color:var(--py-function)">100,000+</td><td style="color:var(--py-builtin)">Discovery</td></tr>
             <tr><td>Accounts fused/day</td><td style="color:var(--py-function)">50,000+</td><td style="color:var(--py-keyword)">Qualification</td></tr>
-            <tr><td>Accounts scored/day</td><td style="color:var(--py-function)">50,000+</td><td style="color:var(--py-keyword)">Qualification</td></tr>
             <tr><td>Contact decisions/day</td><td style="color:var(--py-function)">10,000+</td><td style="color:var(--py-keyword)">Qualification</td></tr>
             <tr><td>Outbound sends/day</td><td style="color:var(--py-function)">Budget-gated</td><td style="color:var(--py-operator)">Contact</td></tr>
-            <tr><td>Reply classification latency</td><td style="color:var(--py-function)">&lt; 60s</td><td style="color:var(--py-operator)">Contact</td></tr>
+            <tr><td>Reply classification</td><td style="color:var(--py-function)">&lt; 60s</td><td style="color:var(--py-operator)">Contact</td></tr>
             <tr><td>Intake room creation</td><td style="color:var(--py-function)">&lt; 5s</td><td style="color:var(--py-operator)">Contact</td></tr>
-            <tr><td>Fulfillment job latency</td><td style="color:var(--py-function)">&lt; 5min</td><td style="color:var(--py-param)">Fulfillment</td></tr>
-            <tr><td>Checkout→Provision latency</td><td style="color:var(--py-function)">&lt; 30s</td><td style="color:var(--py-param)">Billing</td></tr>
+            <tr><td>Fulfillment latency</td><td style="color:var(--py-function)">&lt; 5min</td><td style="color:var(--py-param)">Fulfillment</td></tr>
+            <tr><td>Checkout→Provision</td><td style="color:var(--py-function)">&lt; 30s</td><td style="color:var(--py-param)">Billing</td></tr>
           </tbody>
         </table>
       </div>
@@ -749,38 +1047,63 @@ function renderPerformance(){
         <table class="perf-table">
           <thead><tr><th>Metric</th><th>Target</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Signal extraction precision</td><td style="color:var(--py-function)">≥ 90%</td><td style="color:${checked['SIE-201']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-201']?'Built — 70 tests':'Pending'}</td></tr>
-            <tr><td>ICP scoring accuracy</td><td style="color:var(--py-function)">≥ 85%</td><td style="color:${checked['SIE-303']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-303']?'Built — tested':'Pending'}</td></tr>
-            <tr><td>Buyer resolution precision</td><td style="color:var(--py-function)">≥ 80%</td><td style="color:${checked['SIE-401']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-401']?'Built — tested':'Pending'}</td></tr>
-            <tr><td>Reply classification accuracy</td><td style="color:var(--py-function)">≥ 95%</td><td style="color:${checked['REPLY-207']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['REPLY-207']?'Built — overrides':'Pending'}</td></tr>
-            <tr><td>Unsupported-claim rate</td><td style="color:var(--py-function)">0%</td><td style="color:${checked['EVAL-405']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['EVAL-405']?'Guardrails active':'Pending'}</td></tr>
-            <tr><td>Stale-trigger send rate</td><td style="color:var(--py-function)">&lt; 1%</td><td style="color:${checked['EVAL-405']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['EVAL-405']?'Guardrails active':'Pending'}</td></tr>
-            <tr><td>Bounce rate</td><td style="color:var(--py-function)">&lt; 2%</td><td style="color:${checked['SAFE-208']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SAFE-208']?'Auto-pause built':'Needs data'}</td></tr>
-            <tr><td>Complaint rate</td><td style="color:var(--py-function)">&lt; 0.1%</td><td style="color:${checked['SAFE-208']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SAFE-208']?'Auto-pause built':'Needs data'}</td></tr>
-            <tr><td>Unsubscribe suppression lag</td><td style="color:var(--py-function)">&lt; 1min</td><td style="color:${checked['POL-202']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['POL-202']?'Immediate':'Needs impl'}</td></tr>
-            <tr><td>Kill switch activation</td><td style="color:var(--py-function)">&lt; 2min</td><td style="color:${checked['SAFE-208']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SAFE-208']?'5 scopes built':'Needs impl'}</td></tr>
+            <tr><td>Signal precision</td><td style="color:var(--py-function)">≥ 90%</td><td style="color:${checked['SIE-201']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-201']?'Built':'Pending'}</td></tr>
+            <tr><td>ICP accuracy</td><td style="color:var(--py-function)">≥ 85%</td><td style="color:${checked['SIE-303']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-303']?'Built':'Pending'}</td></tr>
+            <tr><td>Buyer precision</td><td style="color:var(--py-function)">≥ 80%</td><td style="color:${checked['SIE-401']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-401']?'Built':'Pending'}</td></tr>
+            <tr><td>Reply classification</td><td style="color:var(--py-function)">≥ 95%</td><td style="color:${checked['REPLY-207']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['REPLY-207']?'Built':'Pending'}</td></tr>
+            <tr><td>Unsupported claims</td><td style="color:var(--py-function)">0%</td><td style="color:${checked['EVAL-405']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['EVAL-405']?'Guardrails':'Pending'}</td></tr>
+            <tr><td>Bounce rate</td><td style="color:var(--py-function)">&lt; 2%</td><td style="color:${checked['SAFE-208']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SAFE-208']?'Auto-pause':'Needs data'}</td></tr>
+            <tr><td>Complaint rate</td><td style="color:var(--py-function)">&lt; 0.1%</td><td style="color:${checked['SAFE-208']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SAFE-208']?'Auto-pause':'Needs data'}</td></tr>
+            <tr><td>Unsub lag</td><td style="color:var(--py-function)">&lt; 1min</td><td style="color:${checked['POL-202']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['POL-202']?'Immediate':'Pending'}</td></tr>
+            <tr><td>Kill switch</td><td style="color:var(--py-function)">&lt; 2min</td><td style="color:${checked['SAFE-208']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SAFE-208']?'5 scopes':'Pending'}</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <div class="chart-grid" style="margin-top:20px">
+  <div class="chart-grid" style="margin-bottom:24px">
     <div class="chart-card full">
-      <div class="chart-card-header"><h3>Technology Stack Readiness</h3><p>Required and optional dependencies</p></div>
+      <div class="chart-card-header"><h3>Sending Domain Setup</h3><p>Recommended domain architecture for outreach and product mail</p></div>
       <div class="chart-card-body" style="display:block;padding:0">
         <table class="perf-table">
-          <thead><tr><th>Technology</th><th>Role</th><th>Required</th><th>Ticket</th><th>Status</th></tr></thead>
+          <thead><tr><th>Purpose</th><th>Domain</th><th>Mailbox Pattern</th><th>Ticket</th></tr></thead>
           <tbody>
-            <tr><td style="color:var(--py-class)">PostgreSQL</td><td>Relational state + migrations</td><td style="color:var(--accent-green)">Core</td><td>DATA-003</td><td style="color:${checked['DATA-003']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['DATA-003']?'Done':'Pending'}</td></tr>
-            <tr><td style="color:var(--py-class)">pgvector</td><td>Semantic similarity</td><td style="color:var(--accent-green)">Core</td><td>SCALE-403</td><td style="color:${checked['SCALE-403']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SCALE-403']?'Done':'Pending'}</td></tr>
-            <tr><td style="color:var(--py-class)">Redis</td><td>Queues, caching, rate limiting</td><td style="color:var(--accent-green)">Core</td><td>ARC-001</td><td style="color:${checked['ARC-001']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['ARC-001']?'Done':'Pending'}</td></tr>
-            <tr><td style="color:var(--py-class)">MinIO</td><td>Object storage</td><td style="color:var(--accent-green)">Core</td><td>PLAT-002</td><td style="color:${checked['PLAT-002']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['PLAT-002']?'Done':'Pending'}</td></tr>
-            <tr><td style="color:var(--py-class)">Playwright</td><td>JS-rendered page crawling</td><td style="color:var(--accent-green)">Required</td><td>SIE-103</td><td style="color:${checked['SIE-103']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-103']?'Done':'Pending'}</td></tr>
-            <tr><td style="color:var(--py-class)">Trafilatura</td><td>HTML-to-text extraction</td><td style="color:var(--accent-green)">Required</td><td>SIE-104</td><td style="color:${checked['SIE-104']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-104']?'Done':'Pending'}</td></tr>
-            <tr><td style="color:var(--py-class)">LightGBM</td><td>Learned lead ranking</td><td style="color:var(--text-muted)">Optional</td><td>SIE-603</td><td style="color:${checked['SIE-603']?'var(--accent-green)':'var(--text-muted)'}">${checked['SIE-603']?'Done':'Optional'}</td></tr>
-            <tr><td style="color:var(--py-class)">MLflow</td><td>Model registry/versioning</td><td style="color:var(--text-muted)">Optional</td><td>SIE-606</td><td style="color:${checked['SIE-606']?'var(--accent-green)':'var(--text-muted)'}">${checked['SIE-606']?'Done':'Optional'}</td></tr>
-            <tr><td style="color:var(--py-class)">ClickHouse</td><td>High-volume event telemetry</td><td style="color:var(--text-muted)">Optional</td><td>SIE-703</td><td style="color:${checked['SIE-703']?'var(--accent-green)':'var(--text-muted)'}">${checked['SIE-703']?'Done':'Optional'}</td></tr>
+            <tr><td style="color:var(--py-function)">Prod outreach + reply</td><td style="color:var(--py-string)">go.trustcopilot.com</td><td style="color:var(--text-primary)">alex@go.trustcopilot.com</td><td style="color:var(--py-decorator)">FE-401, FE-404</td></tr>
+            <tr><td style="color:var(--py-function)">Prod transactional</td><td style="color:var(--py-string)">app.trustcopilot.com</td><td style="color:var(--text-primary)">team@app.trustcopilot.com</td><td style="color:var(--py-decorator)">FE-401</td></tr>
+            <tr><td style="color:var(--py-function)">Cert / staging</td><td style="color:var(--py-string)">cert.go.trustcopilot.com</td><td style="color:var(--text-muted)">No external delivery</td><td style="color:var(--py-decorator)">FE-401, FE-008</td></tr>
+            <tr><td style="color:var(--py-function)">Dev / local</td><td style="color:var(--text-muted)">sandbox / mail sink</td><td style="color:var(--text-muted)">No external sending</td><td style="color:var(--py-decorator)">CFG-005</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card full">
+      <div class="chart-card-header"><h3>Full Technology Stack</h3><p>Backend + Frontend — required and optional dependencies</p></div>
+      <div class="chart-card-body" style="display:block;padding:0">
+        <table class="perf-table">
+          <thead><tr><th>Technology</th><th>Layer</th><th>Role</th><th>Required</th><th>Ticket</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--py-class)">PostgreSQL</td><td>BE</td><td>Relational state</td><td style="color:var(--accent-green)">Core</td><td>DATA-003</td><td style="color:${checked['DATA-003']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['DATA-003']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-class)">pgvector</td><td>BE</td><td>Semantic similarity</td><td style="color:var(--accent-green)">Core</td><td>SCALE-403</td><td style="color:${checked['SCALE-403']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SCALE-403']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-class)">Redis</td><td>BE</td><td>Queues, cache, rate limit</td><td style="color:var(--accent-green)">Core</td><td>ARC-001</td><td style="color:${checked['ARC-001']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['ARC-001']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-class)">MinIO</td><td>BE</td><td>Object storage</td><td style="color:var(--accent-green)">Core</td><td>PLAT-002</td><td style="color:${checked['PLAT-002']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['PLAT-002']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-class)">Playwright</td><td>BE</td><td>JS page rendering</td><td style="color:var(--accent-green)">Required</td><td>SIE-103</td><td style="color:${checked['SIE-103']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-103']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-class)">Trafilatura</td><td>BE</td><td>HTML→text extraction</td><td style="color:var(--accent-green)">Required</td><td>SIE-104</td><td style="color:${checked['SIE-104']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['SIE-104']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-class)">LightGBM</td><td>BE</td><td>Learned ranking</td><td style="color:var(--text-muted)">Optional</td><td>SIE-603</td><td style="color:${checked['SIE-603']?'var(--accent-green)':'var(--text-muted)'}">${checked['SIE-603']?'Done':'Optional'}</td></tr>
+            <tr><td style="color:var(--py-class)">MLflow</td><td>BE</td><td>Model registry</td><td style="color:var(--text-muted)">Optional</td><td>SIE-606</td><td style="color:${checked['SIE-606']?'var(--accent-green)':'var(--text-muted)'}">${checked['SIE-606']?'Done':'Optional'}</td></tr>
+            <tr><td style="color:var(--py-class)">ClickHouse</td><td>BE</td><td>Event telemetry</td><td style="color:var(--text-muted)">Optional</td><td>SIE-703</td><td style="color:${checked['SIE-703']?'var(--accent-green)':'var(--text-muted)'}">${checked['SIE-703']?'Done':'Optional'}</td></tr>
+            <tr><td style="color:var(--py-param)">Next.js</td><td>FE</td><td>App Router framework</td><td style="color:var(--accent-green)">Core</td><td>FE-001</td><td style="color:${checked['FE-001']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['FE-001']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-param)">Tailwind CSS</td><td>FE</td><td>Styling framework</td><td style="color:var(--accent-green)">Core</td><td>FE-001</td><td style="color:${checked['FE-001']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['FE-001']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-param)">shadcn/ui</td><td>FE</td><td>UI primitives</td><td style="color:var(--accent-green)">Core</td><td>FE-002</td><td style="color:${checked['FE-002']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['FE-002']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-param)">TanStack Query</td><td>FE</td><td>Server-state caching</td><td style="color:var(--accent-green)">Core</td><td>FE-003</td><td style="color:${checked['FE-003']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['FE-003']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-param)">TanStack Table</td><td>FE</td><td>Data grids</td><td style="color:var(--accent-green)">Required</td><td>FE-005</td><td style="color:${checked['FE-005']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['FE-005']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-param)">React Hook Form</td><td>FE</td><td>Form handling</td><td style="color:var(--accent-green)">Required</td><td>FE-004</td><td style="color:${checked['FE-004']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['FE-004']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-param)">Zod</td><td>FE</td><td>Schema validation</td><td style="color:var(--accent-green)">Required</td><td>FE-004</td><td style="color:${checked['FE-004']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['FE-004']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-param)">ECharts</td><td>FE</td><td>Analytics charts</td><td style="color:var(--accent-green)">Required</td><td>FE-101+</td><td style="color:${checked['FE-101']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['FE-101']?'Done':'Pending'}</td></tr>
+            <tr><td style="color:var(--py-param)">react-dropzone</td><td>FE</td><td>Upload UX</td><td style="color:var(--accent-green)">Required</td><td>FE-602</td><td style="color:${checked['FE-602']?'var(--accent-green)':'var(--accent-yellow)'}">${checked['FE-602']?'Done':'Pending'}</td></tr>
           </tbody>
         </table>
       </div>
